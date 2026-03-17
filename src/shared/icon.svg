@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="400" height="400">
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="100%" stop-color="#2af598" />
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo oscuro temporal para resaltar el contraste -->
+  <rect width="200" height="200" fill="#0f1419" rx="30" />
+
+  <!-- Elementos de la brújula y lupa -->
+  <g stroke="url(#logoGrad)" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Marcas cardinales principales y secundarias -->
+    <path d="M 100 20 L 100 28 M 180 100 L 172 100 M 100 180 L 100 172 M 20 100 L 28 100"
+      stroke-width="4" />
+    <path d="M 43 43 L 49 49 M 157 43 L 151 49 M 43 157 L 49 151 M 157 157 L 151 151"
+      stroke-width="3" />
+
+    <!-- Anillo exterior (Brújula) -->
+    <circle cx="100" cy="100" r="75" stroke-width="4" />
+
+    <!-- Anillo interior (Lupa) -->
+    <circle cx="100" cy="100" r="45" stroke-width="8" />
+  </g>
+
+  <!-- Puntos Cardinales (Textos) -->
+  <g fill="url(#logoGrad)" font-family="system-ui, -apple-system, sans-serif" font-weight="800"
+    font-size="14" text-anchor="middle">
+    <text x="100" y="47">N</text>
+    <text x="156" y="105">E</text>
+    <text x="100" y="165">S</text>
+    <text x="44" y="105">W</text>
+  </g>
+
+  <!-- Rayo central interactuando con las circunferencias -->
+  <polygon points="125,20 95,105 125,105 75,185 105,100 75,100" fill="url(#logoGrad)" />
+</svg>

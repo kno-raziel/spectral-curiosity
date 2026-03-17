@@ -1,0 +1,34 @@
+{
+  "name": "spectral-curiosity",
+  "private": false,
+  "version": "0.1.0",
+  "description": "Antigravity Workspace Manager — Fix and manage conversation workspace associations",
+  "type": "module",
+  "scripts": {
+    "dev": "bunx @tailwindcss/cli -i src/client/index.css -o dist/app.css && bun run src/server/index.ts",
+    "build": "bunx @tailwindcss/cli -i src/client/index.css -o dist/app.css --minify && bun build ./index.html --production --outdir=dist",
+    "build:ext": "cd src/extension && npm install && npx electron-rebuild -v 39.2.3 -m . && node esbuild.mjs",
+    "watch:ext": "cd src/extension && node esbuild.mjs --watch",
+    "package:ext": "bun run build:ext && cd src/extension && npx @vscode/vsce package",
+    "release": "changelogen --release --push",
+    "release:dry": "changelogen",
+    "check": "bun run typecheck && bun run lint",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write ."
+  },
+  "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.7",
+    "@types/bun": "^1.2.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "changelogen": "^0.6.2",
+    "tailwindcss": "^4.2.1",
+    "typescript": "~5.9.3"
+  }
+}

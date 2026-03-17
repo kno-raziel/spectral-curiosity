@@ -1,0 +1,128 @@
+/**
+ * Environment-aware API layer.
+ *
+ * Detects whether running inside a VS Code webview (extension)
+ * or a regular browser (Bun server) and uses the appropriate
+ * transport: postMessage vs HTTP fetch.
+ */
+
+import type { Conversation, SavePayload, SaveResult, WorkspaceEntry } from "../shared/types";
+
+// ─── VS Code webview transport ──────────────────────────────────────────────
+
+interface VsCodeApi {
+  postMessage(msg: unknown): void;
+  getState(): unknown;
+  setState(state: unknown): void;
+}
+
+declare function acquireVsCodeApi(): VsCodeApi;
+
+const isVsCodeWebview = typeof acquireVsCodeApi === "function";
+
+let vscode: VsCodeApi | null = null;
+
+if (isVsCodeWebview) {
+  vscode = acquireVsCodeApi();
+
+  // Listen for responses from extension host
+  window.addEventListener("message", (event: MessageEvent) => {
+    const msg = event.data as { type: string; id: string; data?: unknown; error?: string };
+    if (msg.type !== "response") return;
+
+    const req = pending.get(msg.id);
+    if (!req) return;
+    pending.delete(msg.id);
+
+    if (msg.error) {
+      req.reject(new Error(msg.error));
+    } else {
+      req.resolve(msg.data);
+    }
+  });
+}
+
+type PendingRequest = {
+  resolve: (value: unknown) => void;
+  reject: (reason: Error) => void;
+};
+
+const pending = new Map<string, PendingRequest>();
+let nextId = 0;
+
+function postMessageRequest<T>(method: string, params?: unknown): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = String(nextId++);
+    pending.set(id, { resolve: resolve as (value: unknown) => void, reject });
+    vscode?.postMessage({ type: "request", id, method, params });
+  });
+}
+
+// ─── HTTP fetch transport ───────────────────────────────────────────────────
+
+const API_BASE = "";
+
+// ─── Public API (same signatures regardless of transport) ───────────────────
+
+export async function fetchConversations(): Promise<Conversation[]> {
+  if (isVsCodeWebview) return postMessageRequest("getConversations");
+  const res = await fetch(`${API_BASE}/api/conversations`);
+  if (!res.ok) throw new Error("Failed to load conversations");
+  return res.json();
+}
+
+export async function fetchWorkspaces(): Promise<WorkspaceEntry[]> {
+  if (isVsCodeWebview) return postMessageRequest("getWorkspaces");
+  const res = await fetch(`${API_BASE}/api/workspaces`);
+  if (!res.ok) throw new Error("Failed to load workspaces");
+  return res.json();
+}
+
+export async function saveChanges(payload: SavePayload): Promise<SaveResult> {
+  if (isVsCodeWebview) return postMessageRequest("save", payload);
+  const res = await fetch(`${API_BASE}/api/save`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+export interface BackupEntry {
+  filename: string;
+  path: string;
+  timestamp: number;
+  date: string;
+  sizeBytes: number;
+}
+
+export interface DiffResult {
+  labelA: string;
+  labelB: string;
+  changes: Array<{
+    id: string;
+    titleA: string;
+    titleB: string;
+    workspaceA: string;
+    workspaceB: string;
+    titleChanged: boolean;
+    workspaceChanged: boolean;
+  }>;
+  totalA: number;
+  totalB: number;
+}
+
+export async function fetchBackups(): Promise<BackupEntry[]> {
+  if (isVsCodeWebview) return postMessageRequest("getBackups");
+  const res = await fetch(`${API_BASE}/api/backups`);
+  if (!res.ok) throw new Error("Failed to load backups");
+  return res.json();
+}
+
+export async function fetchDiff(pathA: string, pathB: string): Promise<DiffResult> {
+  if (isVsCodeWebview) return postMessageRequest("diffBackups", { a: pathA, b: pathB });
+  const params = new URLSearchParams({ a: pathA, b: pathB });
+  const res = await fetch(`${API_BASE}/api/backups/diff?${params}`);
+  if (!res.ok) throw new Error("Failed to load diff");
+  return res.json();
+}

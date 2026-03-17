@@ -1,0 +1,61 @@
+{
+  "name": "spectral-curiosity-extension",
+  "displayName": "Spectral Curiosity",
+  "description": "Manage Antigravity conversation workspace associations",
+  "version": "0.1.0",
+  "publisher": "vaganzia",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vaganzia/spectral-curiosity"
+  },
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#0d1117",
+    "theme": "dark"
+  },
+  "keywords": [
+    "antigravity",
+    "workspace",
+    "conversations",
+    "ai",
+    "manager"
+  ],
+  "categories": [
+    "Visualization"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "spectralCuriosity.open",
+        "title": "Spectral Curiosity: Open Workspace Manager"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.7",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/vscode": "^1.100.0",
+    "esbuild": "^0.25.4",
+    "tailwindcss": "^4.1.7",
+    "typescript": "~5.9.3"
+  }
+}
