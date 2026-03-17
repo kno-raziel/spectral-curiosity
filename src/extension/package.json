@@ -28,6 +28,9 @@
     "Visualization"
   ],
   "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "commands": [
       {
@@ -41,11 +44,20 @@
       {
         "command": "spectralCuriosity.backupNow",
         "title": "Spectral Curiosity: Backup Now"
+      },
+      {
+        "command": "spectralCuriosity.openBackupFolder",
+        "title": "Spectral Curiosity: Open Backup Folder"
       }
     ],
     "configuration": {
       "title": "Spectral Curiosity — Backup",
       "properties": {
+        "spectralCuriosity.backup.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable automated interval backup."
+        },
         "spectralCuriosity.backup.path": {
           "type": "string",
           "default": "",
@@ -60,10 +72,36 @@
           "default": "full",
           "description": "Backup strategy: 'full' exports every conversation, 'incremental' skips unchanged ones."
         },
+        "spectralCuriosity.backup.intervalMinutes": {
+          "type": "number",
+          "default": 60,
+          "minimum": 5,
+          "description": "Minutes between automatic backups (minimum 5)."
+        },
         "spectralCuriosity.backup.maxBackups": {
           "type": "number",
           "default": 5,
-          "description": "Maximum number of backups to keep. Older backups are deleted automatically. Set to 0 to disable rotation."
+          "description": "Maximum number of on-demand backups to keep. Older backups are deleted automatically. Set to 0 to disable rotation."
+        },
+        "spectralCuriosity.backup.includeBrain": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include brain/ directory in backups."
+        },
+        "spectralCuriosity.backup.includeKnowledge": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include knowledge/ directory in backups."
+        },
+        "spectralCuriosity.backup.includeSkills": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include skills/ and workflows/ directories in backups."
+        },
+        "spectralCuriosity.backup.includeTokenMetadata": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include per-conversation token/model metadata (increases backup time)."
         }
       }
     }

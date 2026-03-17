@@ -176,17 +176,21 @@ setInterval(() => fullBackup(), settings.intervalMs);
 
 - [x] Add core settings contributions to `src/extension/package.json` (`path`, `strategy`, `maxBackups`)
 - [x] Add "Spectral Curiosity: Backup Now" command (with folder picker + save-to-settings prompt)
-- [ ] Add remaining settings contributions (`enabled`, `intervalMinutes`, `stepThreshold`, `include*`)
-- [ ] Implement `BackupScheduler` with event + interval support
-- [ ] Add "Spectral Curiosity: Open Backup Folder" command
-- [ ] Status bar indicator showing last backup time
-- [ ] Debounce rapid events (avoid backing up the same conversation twice in 30s)
+- [x] Add remaining settings contributions (`enabled`, `intervalMinutes`, `include*`)
+- [x] Implement `BackupScheduler` with interval support + single-overwrite auto-backup
+- [x] Add "Spectral Curiosity: Open Backup Folder" command
+- [x] Status bar indicator showing last backup time
+- [x] Debounce rapid events (skip if backup already in progress)
 
 #### Files
 
-- `src/extension/sdk/backup-scheduler.ts` — Scheduling logic (not yet created)
-- `src/extension/package.json` — Settings + commands (partially done)
-- `src/extension/extension.ts` — Backup Now command (done)
+- `src/extension/sdk/backup-scheduler.ts` — Scheduling logic
+- `src/extension/sdk/backup-engine.ts` — Added `autoBackupMode` option (with atomic swap for safety)
+- `src/extension/package.json` — All settings + commands
+- `src/extension/extension.ts` — Scheduler lifecycle, status bar, Open Backup Folder command
+
+**Status:** Phase 1.4 COMPLETE.
+
 
 ---
 

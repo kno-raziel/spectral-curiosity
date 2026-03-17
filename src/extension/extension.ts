@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 
 import { SpectralPanel } from "./SpectralPanel";
 import { BackupEngine } from "./sdk/backup-engine";
+import { BackupScheduler, type BackupSchedulerState } from "./sdk/backup-scheduler";
 import { SdkManager } from "./sdk/sdk-manager";
 
 export function activate(context: vscode.ExtensionContext) {
@@ -86,6 +87,7 @@ export function activate(context: vscode.ExtensionContext) {
             includeKnowledge: config.get<boolean>("includeKnowledge") ?? true,
             includeSkills: config.get<boolean>("includeSkills") ?? true,
             includeTokenMetadata: config.get<boolean>("includeTokenMetadata") ?? false,
+            autoBackupMode: false,
             log,
             onProgress: (p) => {
               const pct = p.total > 0 ? Math.round((p.current / p.total) * 100) : 0;
@@ -119,6 +121,35 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   context.subscriptions.push(backupCommand);
+
+  // ── Open Backup Folder Command ─────────────────────────────────────
+  const openBackupFolderCommand = vscode.commands.registerCommand(
+    "spectralCuriosity.openBackupFolder",
+    async () => {
+      const config = vscode.workspace.getConfiguration("spectralCuriosity.backup");
+      const backupDir = config.get<string>("path") || join(homedir(), "antigravity-backups");
+      const uri = vscode.Uri.file(backupDir);
+      await vscode.env.openExternal(uri);
+    },
+  );
+
+  context.subscriptions.push(openBackupFolderCommand);
+
+  // ── Backup Scheduler ───────────────────────────────────────────────
+  const scheduler = new BackupScheduler(context);
+  context.subscriptions.push(scheduler);
+
+  // ── Status Bar ─────────────────────────────────────────────────────
+  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 50);
+  statusBarItem.command = "spectralCuriosity.backupNow";
+  updateStatusBar(statusBarItem, scheduler.state);
+  statusBarItem.show();
+  context.subscriptions.push(statusBarItem);
+
+  const stateWatcher = scheduler.onDidChangeState((state) => {
+    updateStatusBar(statusBarItem, state);
+  });
+  context.subscriptions.push(stateWatcher);
 
   // ── SDK Spike Command ──────────────────────────────────────────────
   const spikeCommand = vscode.commands.registerCommand("spectralCuriosity.sdkSpike", async () => {
@@ -262,4 +293,38 @@ function phaseLabel(phase: string): string {
     default:
       return "⏳";
   }
+}
+
+function updateStatusBar(item: vscode.StatusBarItem, state: BackupSchedulerState): void {
+  if (state.backupInProgress) {
+    item.text = "$(sync~spin) Backup…";
+    item.tooltip = "Spectral Curiosity: Backup in progress";
+    return;
+  }
+
+  if (state.lastBackupFailed) {
+    item.text = "$(warning) Backup";
+    item.tooltip = `Spectral Curiosity: Last backup failed\n${state.lastBackupSummary ?? ""}`;
+    return;
+  }
+
+  if (state.lastBackupAt) {
+    const time = new Date(state.lastBackupAt).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    item.text = `$(cloud-upload) ${time}`;
+    item.tooltip = `Spectral Curiosity: Last backup at ${time}\n${state.lastBackupSummary ?? ""}\nClick to run backup now`;
+    return;
+  }
+
+  if (state.running) {
+    item.text = "$(cloud-upload) Auto";
+    item.tooltip = "Spectral Curiosity: Auto-backup enabled\nClick to run backup now";
+    return;
+  }
+
+  // Scheduler not running, no backup history
+  item.text = "$(cloud-upload) Backup";
+  item.tooltip = "Spectral Curiosity: Click to run backup now";
 }

@@ -37,7 +37,9 @@ import type { LsClient } from "./ls-client";
 import type { CascadeEntry } from "./ls-types";
 import { renderTrajectoryMarkdown } from "./markdown-export";
 
-// node-sqlite3-wasm is external in esbuild, loaded at runtime from node_modules
+// node-sqlite3-wasm is handled by the `optionalExternals` esbuild plugin,
+// which wraps the require in try/catch at build time. The lazy loader here
+// is still needed because the module is loaded on-demand (not at activation).
 
 /** Minimal typed interface for the subset of node-sqlite3-wasm we use */
 interface SqliteDatabase {
@@ -49,8 +51,15 @@ interface SqliteModule {
   Database: new (path: string, opts?: { readOnly?: boolean }) => SqliteDatabase;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { Database } = require("node-sqlite3-wasm") as SqliteModule;
+/** Lazy-load node-sqlite3-wasm. Returns null if unavailable. */
+function loadSqlite(): SqliteModule | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("node-sqlite3-wasm") as SqliteModule;
+  } catch {
+    return null;
+  }
+}
 
 /** Extension version — injected from package.json at build time */
 const TOOL_VERSION = "0.1.0";
@@ -73,6 +82,12 @@ export interface BackupEngineOptions {
   includeSkills: boolean;
   /** Include token/model metadata per conversation */
   includeTokenMetadata: boolean;
+  /**
+   * Auto-backup mode: uses a fixed directory name (`spectral-auto-backup`)
+   * that is overwritten on each run, and skips rotation.
+   * Used by BackupScheduler to avoid unbounded disk usage.
+   */
+  autoBackupMode: boolean;
   /** Logger function */
   log: (msg: string) => void;
   /** Progress callback */
@@ -111,8 +126,9 @@ export class BackupEngine {
 
     // -- Database fallback to bypass the 10-item listCascades limit --
     try {
-      if (existsSync(DB_PATH)) {
-        const db = new Database(DB_PATH, { readOnly: true });
+      const sqlite = loadSqlite();
+      if (sqlite && existsSync(DB_PATH)) {
+        const db = new sqlite.Database(DB_PATH, { readOnly: true });
         try {
           const row = db.get("SELECT value FROM ItemTable WHERE key = ?", [
             "antigravityUnifiedStateSync.trajectorySummaries",
@@ -162,8 +178,10 @@ export class BackupEngine {
     }
 
     // ── Phase 3: Create temp backup directory ────────────────────────
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").replace("Z", "");
-    const finalName = `spectral-backup-${timestamp}`;
+    const autoMode = this.options.autoBackupMode;
+    const finalName = autoMode
+      ? "spectral-auto-backup"
+      : `spectral-backup-${new Date().toISOString().replace(/[:.]/g, "-").replace("Z", "")}`;
     const tempName = `.backup-in-progress-${Date.now()}`;
     const tempDir = join(backupDir, tempName);
     const finalDir = join(backupDir, finalName);
@@ -255,12 +273,23 @@ export class BackupEngine {
     writeFileSync(join(tempDir, "manifest.json"), manifestJson, "utf8");
     totalBytes += Buffer.byteLength(manifestJson, "utf8");
 
-    // ── Phase 7: Atomic rename ───────────────────────────────────────
-    renameSync(tempDir, finalDir);
+    // ── Phase 7: Atomic swap ────────────────────────────────────────
+    if (autoMode && existsSync(finalDir)) {
+      // Atomic swap: move old out, move new in, then delete old.
+      // Avoids ENOTEMPTY race with Spotlight / system indexers.
+      const staleDir = `${finalDir}.old-${Date.now()}`;
+      renameSync(finalDir, staleDir);
+      renameSync(tempDir, finalDir);
+      rmSync(staleDir, { recursive: true, force: true });
+    } else {
+      renameSync(tempDir, finalDir);
+    }
     log(`Backup saved to: ${finalDir}`);
 
-    // ── Phase 8: Rotate old backups ──────────────────────────────────
-    this.rotateBackups();
+    // ── Phase 8: Rotate old backups (on-demand only) ─────────────────
+    if (!autoMode) {
+      this.rotateBackups();
+    }
 
     const durationMs = Date.now() - startTime;
     const failedCount = Object.keys(errors).length;

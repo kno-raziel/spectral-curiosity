@@ -28,12 +28,43 @@ if (!existsSync("dist")) {
   execSync("mkdir -p dist", { cwd: import.meta.dirname });
 }
 
+/**
+ * Plugin: optional externals — wraps specified modules in try/catch so they
+ * fail gracefully at runtime instead of crashing extension activation.
+ *
+ * Modules like node-sqlite3-wasm aren't bundled in the VSIX, so a bare
+ * require() would crash. This plugin generates a safe wrapper that returns
+ * an empty object if the module can't be loaded.
+ */
+const optionalExternals = {
+  name: "optional-externals",
+  setup(build) {
+    const modules = ["node-sqlite3-wasm"];
+    const filter = new RegExp(`^(${modules.join("|")})$`);
+
+    build.onResolve({ filter }, (args) => ({
+      path: args.path,
+      namespace: "optional-external",
+    }));
+
+    build.onLoad({ filter: /.*/, namespace: "optional-external" }, (args) => ({
+      contents: [
+        `let mod;`,
+        `try { mod = require(${JSON.stringify(args.path)}); } catch {}`,
+        `module.exports = mod || {};`,
+      ].join("\n"),
+      loader: "js",
+    }));
+  },
+};
+
 // Extension host bundle (Node.js)
 const hostOptions = {
   entryPoints: ["extension.ts"],
   bundle: true,
   outfile: "dist/extension.js",
-  external: ["vscode", "node-sqlite3-wasm"],
+  external: ["vscode"],
+  plugins: [optionalExternals],
   format: "cjs",
   platform: "node",
   target: "node20",
