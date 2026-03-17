@@ -25,12 +25,7 @@ export function Header({ total, assigned, pending, saving, onSave }: HeaderProps
               <stop offset="100%" stopColor="#2af598" />
             </linearGradient>
           </defs>
-          <g
-            stroke="url(#logoGrad)"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          >
+          <g stroke="url(#logoGrad)" strokeLinecap="round" strokeLinejoin="round" fill="none">
             <path
               d="M 100 20 L 100 28 M 180 100 L 172 100 M 100 180 L 100 172 M 20 100 L 28 100"
               strokeWidth="4"
@@ -42,10 +37,7 @@ export function Header({ total, assigned, pending, saving, onSave }: HeaderProps
             <circle cx="100" cy="100" r="75" strokeWidth="4" />
             <circle cx="100" cy="100" r="45" strokeWidth="8" />
           </g>
-          <polygon
-            points="125,20 95,105 125,105 75,185 105,100 75,100"
-            fill="url(#logoGrad)"
-          />
+          <polygon points="125,20 95,105 125,105 75,185 105,100 75,100" fill="url(#logoGrad)" />
         </svg>
         Spectral Curiosity
       </h1>

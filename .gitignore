@@ -29,6 +29,7 @@ Thumbs.db
 # Bun
 .bun/
 bun.lockb
+src/extension/bun.lock
 
 # Environment
 .env

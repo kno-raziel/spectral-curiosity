@@ -27,7 +27,6 @@
   "categories": [
     "Visualization"
   ],
-
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -38,8 +37,36 @@
       {
         "command": "spectralCuriosity.sdkSpike",
         "title": "Spectral Curiosity: SDK Spike"
+      },
+      {
+        "command": "spectralCuriosity.backupNow",
+        "title": "Spectral Curiosity: Backup Now"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Spectral Curiosity — Backup",
+      "properties": {
+        "spectralCuriosity.backup.path": {
+          "type": "string",
+          "default": "",
+          "description": "Directory where backups are saved. Leave empty to be prompted each time."
+        },
+        "spectralCuriosity.backup.strategy": {
+          "type": "string",
+          "enum": [
+            "full",
+            "incremental"
+          ],
+          "default": "full",
+          "description": "Backup strategy: 'full' exports every conversation, 'incremental' skips unchanged ones."
+        },
+        "spectralCuriosity.backup.maxBackups": {
+          "type": "number",
+          "default": 5,
+          "description": "Maximum number of backups to keep. Older backups are deleted automatically. Set to 0 to disable rotation."
+        }
+      }
+    }
   },
   "scripts": {
     "build": "node esbuild.mjs",

@@ -25,9 +25,7 @@ export function discoverLsConnection(
       "ps -eo pid,args 2>/dev/null | grep language_server | grep csrf_token | grep -v grep",
       { encoding: "utf8", timeout: 5000 },
     );
-    const lines = psResult
-      .split("\n")
-      .filter((l: string) => l.trim().length > 0);
+    const lines = psResult.split("\n").filter((l: string) => l.trim().length > 0);
     if (lines.length === 0) {
       log("⚠️ No LS processes found");
       return null;
@@ -73,13 +71,9 @@ export function discoverLsConnection(
       );
 
       const portMatches = [...lsofResult.matchAll(/127\.0\.0\.1:(\d+)/g)];
-      const ports = portMatches
-        .map((m) => parseInt(m[1], 10))
-        .filter((p) => p !== extPort);
+      const ports = portMatches.map((m) => parseInt(m[1], 10)).filter((p) => p !== extPort);
 
-      log(
-        `Candidate ConnectRPC ports (excl extPort ${extPort}): ${ports.join(", ")}`,
-      );
+      log(`Candidate ConnectRPC ports (excl extPort ${extPort}): ${ports.join(", ")}`);
 
       if (ports.length > 0) {
         return { port: ports[0], csrfToken };

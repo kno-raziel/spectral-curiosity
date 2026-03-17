@@ -30,9 +30,9 @@ function createNodeAdapter(readOnly: boolean): DbAdapter {
 function loadSnapshotNode(dbPath: string) {
   const db = new Database(dbPath, { readOnly: true });
   try {
-    const row = db.get("SELECT value FROM ItemTable WHERE key = ?", [DB_KEYS.trajectorySummaries]) as
-      | { value: string }
-      | null;
+    const row = db.get("SELECT value FROM ItemTable WHERE key = ?", [
+      DB_KEYS.trajectorySummaries,
+    ]) as { value: string } | null;
 
     if (!row?.value) return [];
 

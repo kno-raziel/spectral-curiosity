@@ -79,7 +79,7 @@ spectral-backup-2026-03-16T19-45-00/
   "createdAt": "2026-03-16T19:45:00Z",
   "tool": "spectral-curiosity",
   "toolVersion": "0.2.0",
-  "conversationCount": 81,
+  "conversationCount": 42,
   "totalSizeBytes": 524288000,
   "strategy": "full",
   "sourcePaths": {
@@ -98,29 +98,37 @@ spectral-backup-2026-03-16T19-45-00/
 
 ---
 
-### Phase 1.3 — Backup Engine (Extension)
+### Phase 1.3 — Backup Engine (Extension) ✅ DONE
 
-**Goal:** Implement the backup engine that runs inside the extension.
+**Result:** Created `src/extension/sdk/backup-engine.ts` with:
 
 #### Tasks
 
-- [ ] Create `BackupEngine` class in `src/extension/sdk/`
-- [ ] Implement conversation export:
+- [x] Create `BackupEngine` class in `src/extension/sdk/`
+- [x] Implement conversation export:
   1. `lsClient.listCascades()` → get all cascadeIds
-  2. For each: `lsClient.getTrajectory(cascadeId)` → full steps
-  3. For each: `lsClient.getArtifactSnapshots(cascadeId)` → artifact text
-  4. Serialize to JSON + Markdown using backup-writer
-- [ ] Implement file-system backup:
+  2. SQLite fallback to bypass LS 10-item limit (`node-sqlite3-wasm` + protobuf decode)
+  3. For each: `lsClient.getTrajectory(cascadeId)` → full steps
+  4. For each: `lsClient.getArtifactSnapshots(cascadeId)` → artifact text
+  5. Serialize to JSON + Markdown
+- [x] Implement file-system backup:
   1. Copy `brain/` directory tree
   2. Copy `knowledge/` directory tree
-  3. Copy `skills/`, `workflows/`, `user_settings.pb`
-- [ ] Implement backup rotation (keep last N backups, configurable)
-- [ ] Progress reporting via VS Code progress notification
+  3. Copy `skills/` with symlink dereferencing, `workflows/`
+- [x] Implement backup rotation (keep last N backups, configurable)
+- [x] Progress reporting via VS Code progress notification
+- [x] Graceful handling of purged conversations ("deleted by Antigravity")
+- [x] Resilient export for large conversations (LS omits `steps` for 2000+ step conversations)
+
+> [!NOTE]
+> **Known limitation:** 7 conversations with very large step counts (~2000+) are returned by the LS without the `steps` array. The `trajectory.json` and metadata are still saved. See `docs/backup_engine.md` for pending exploration of `GetCascadeTrajectorySteps` with pagination.
 
 #### Files
 
 - `src/extension/sdk/backup-engine.ts` — Core backup logic
-- `src/extension/sdk/backup-scheduler.ts` — Scheduling and event triggers
+- `src/extension/sdk/markdown-export.ts` — Trajectory → Markdown renderer
+- `src/shared/backup-format.ts` — Backup manifest and metadata types
+- `src/extension/sdk/ls-types.ts` — Updated `FullTrajectory` with optional `steps`
 
 ---
 
@@ -166,18 +174,19 @@ setInterval(() => fullBackup(), settings.intervalMs);
 
 #### Tasks
 
-- [ ] Add settings contributions to `src/extension/package.json`
+- [x] Add core settings contributions to `src/extension/package.json` (`path`, `strategy`, `maxBackups`)
+- [x] Add "Spectral Curiosity: Backup Now" command (with folder picker + save-to-settings prompt)
+- [ ] Add remaining settings contributions (`enabled`, `intervalMinutes`, `stepThreshold`, `include*`)
 - [ ] Implement `BackupScheduler` with event + interval support
-- [ ] Add "Spectral Curiosity: Backup Now" command
 - [ ] Add "Spectral Curiosity: Open Backup Folder" command
 - [ ] Status bar indicator showing last backup time
 - [ ] Debounce rapid events (avoid backing up the same conversation twice in 30s)
 
 #### Files
 
-- `src/extension/sdk/backup-scheduler.ts` — Scheduling logic
-- `src/extension/package.json` — Settings + commands
-- `src/extension/commands.ts` — Manual backup commands
+- `src/extension/sdk/backup-scheduler.ts` — Scheduling logic (not yet created)
+- `src/extension/package.json` — Settings + commands (partially done)
+- `src/extension/extension.ts` — Backup Now command (done)
 
 ---
 

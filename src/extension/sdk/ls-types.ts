@@ -157,8 +157,26 @@ export interface FullTrajectory {
     trajectoryId: string;
     cascadeId: string;
     trajectoryType: string;
-    steps: TrajectoryStep[];
+    /** May be absent for very large conversations where the LS omits step data */
+    steps?: TrajectoryStep[];
+    metadata?: {
+      workspaces?: Array<{
+        workspaceFolderAbsoluteUri: string;
+        repository?: { computedName?: string; gitOriginUrl?: string };
+        branchName?: string;
+      }>;
+      createdAt?: string;
+    };
+    generatorMetadata?: GeneratorMetadataEntry[];
+    parentReferences?: Array<{
+      trajectoryId: string;
+      trajectoryType: string;
+      stepIndex: number;
+      referenceType: string;
+    }>;
   };
+  numTotalSteps?: number;
+  status?: string;
 }
 
 export interface TrajectoryStepsResponse {

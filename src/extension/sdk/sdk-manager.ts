@@ -8,8 +8,8 @@
  * the extension degrades gracefully.
  */
 
-import type * as vscode from "vscode";
 import { AntigravitySDK } from "antigravity-sdk";
+import type * as vscode from "vscode";
 import { discoverLsConnection } from "./connection";
 import { LsClient } from "./ls-client";
 
@@ -41,17 +41,12 @@ export class SdkManager implements vscode.Disposable {
       await sdk.initialize();
 
       log(`SDK initialized (v${sdk.version})`);
-      log(
-        `  LS ready: ${sdk.ls.isReady}, port: ${sdk.ls.port}, CSRF: ${sdk.ls.hasCsrfToken}`,
-      );
+      log(`  LS ready: ${sdk.ls.isReady}, port: ${sdk.ls.port}, CSRF: ${sdk.ls.hasCsrfToken}`);
 
       // macOS: SDK's Phase 2 discovery uses Linux-only ss/netstat
       if (process.platform === "darwin") {
         log("macOS detected — running manual port discovery via lsof");
-        const conn = discoverLsConnection(
-          (await import("vscode")).workspace.workspaceFolders,
-          log,
-        );
+        const conn = discoverLsConnection((await import("vscode")).workspace.workspaceFolders, log);
 
         if (conn) {
           // Try HTTPS first (ConnectRPC default), fall back to HTTP
@@ -66,8 +61,7 @@ export class SdkManager implements vscode.Disposable {
               await sdk.ls.getUserStatus();
               log(`✅ Connected via HTTP on port ${conn.port}`);
             } catch (httpErr: unknown) {
-              const msg =
-                httpErr instanceof Error ? httpErr.message : String(httpErr);
+              const msg = httpErr instanceof Error ? httpErr.message : String(httpErr);
               log(`❌ HTTP also failed: ${msg}`);
               return null;
             }

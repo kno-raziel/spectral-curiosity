@@ -45,13 +45,8 @@ export class LsClient {
    * Get only the steps array (lighter than `getTrajectory`).
    * Undocumented RPC: `GetCascadeTrajectorySteps`
    */
-  async getTrajectorySteps(
-    cascadeId: string,
-  ): Promise<TrajectoryStepsResponse> {
-    const result: unknown = await this.sdk.ls.rawRPC(
-      "GetCascadeTrajectorySteps",
-      { cascadeId },
-    );
+  async getTrajectorySteps(cascadeId: string): Promise<TrajectoryStepsResponse> {
+    const result: unknown = await this.sdk.ls.rawRPC("GetCascadeTrajectorySteps", { cascadeId });
     return result as TrajectoryStepsResponse;
   }
 
@@ -59,9 +54,7 @@ export class LsClient {
    * Get artifact snapshots with full text content.
    * Undocumented RPC: `GetArtifactSnapshots`
    */
-  async getArtifactSnapshots(
-    cascadeId: string,
-  ): Promise<ArtifactSnapshotsResponse> {
+  async getArtifactSnapshots(cascadeId: string): Promise<ArtifactSnapshotsResponse> {
     const result: unknown = await this.sdk.ls.rawRPC("GetArtifactSnapshots", {
       cascadeId,
     });
@@ -72,13 +65,10 @@ export class LsClient {
    * Get per-step model usage metadata (tokens, model names, timing).
    * Undocumented RPC: `GetCascadeTrajectoryGeneratorMetadata`
    */
-  async getGeneratorMetadata(
-    cascadeId: string,
-  ): Promise<GeneratorMetadataResponse> {
-    const result: unknown = await this.sdk.ls.rawRPC(
-      "GetCascadeTrajectoryGeneratorMetadata",
-      { cascadeId },
-    );
+  async getGeneratorMetadata(cascadeId: string): Promise<GeneratorMetadataResponse> {
+    const result: unknown = await this.sdk.ls.rawRPC("GetCascadeTrajectoryGeneratorMetadata", {
+      cascadeId,
+    });
     return result as GeneratorMetadataResponse;
   }
 

@@ -91,7 +91,7 @@ From `listCascades()` alone, we can extract:
 
 ### Option 1: USS `trajectorySummaries` — ❌ Index Only
 
-Queried `state.vscdb` at `~/Library/Application Support/Antigravity/User/globalStorage/`:
+Queried `state.vscdb` in Antigravity's `globalStorage/` directory:
 
 | USS Key | Size | Content |
 |---------|------|---------|
@@ -104,11 +104,11 @@ Queried `state.vscdb` at `~/Library/Application Support/Antigravity/User/globalS
 
 ### Option 2: Local `.pb` Files — ❌ None Exist
 
-Searched entire `~/Library/Application Support/Antigravity/` directory tree:
+Searched Antigravity's application data directory tree:
 
 - **No `.pb` files** found anywhere
 - **No conversation JSON** in any subdirectory
-- `shared_proto_db/` LevelDB = 1KB (Chromium internals, not conversation data)
+- `shared_proto_db/` LevelDB = minimal (Chromium internals, not conversation data)
 - `Session Storage/` = no conversation references
 - `~/.gemini/antigravity/brain/<id>/` = only agent-created artifacts (plans, walkthroughs, media), NOT full message history. The `.system_generated/logs/` directory only appears during checkpoint truncation.
 
