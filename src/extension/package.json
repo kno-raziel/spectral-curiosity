@@ -3,11 +3,11 @@
   "displayName": "Spectral Curiosity",
   "description": "Manage Antigravity conversation workspace associations",
   "version": "0.1.0",
-  "publisher": "vaganzia",
+  "publisher": "kno-raziel",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vaganzia/spectral-curiosity"
+    "url": "https://github.com/kno-raziel/spectral-curiosity"
   },
   "engines": {
     "vscode": "^1.100.0"
