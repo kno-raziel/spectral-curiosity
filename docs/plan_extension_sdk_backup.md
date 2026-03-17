@@ -6,67 +6,37 @@ Integrate the [antigravity-sdk](https://github.com/Kanezal/antigravity-sdk) into
 
 ## Background
 
-Antigravity stores conversations as AES-GCM encrypted `.pb` files in `~/.gemini/antigravity/conversations/`. These files cannot be decoded externally. However, the community `antigravity-sdk` provides access to a local Language Server with 68 verified RPC methods, including `GetConversation` which likely returns full conversation content.
+Conversation content is stored server-side (Google's cloud) and streamed by the Language Server on demand. There are no local `.pb` files or cached messages.
 
-The SDK communicates via three local channels:
-1. `vscode.commands.executeCommand()` — standard VS Code Extension API
-2. Read-only `state.vscdb` — SQLite via `sql.js` (WASM)
-3. ConnectRPC to `127.0.0.1` Language Server — ephemeral CSRF token auth
+The community `antigravity-sdk` provides access to the local Language Server via ConnectRPC. Phase 1.0 spike discovered that **undocumented RPC methods** return full conversation content:
+
+| Method | Key | Returns |
+|--------|-----|--------|
+| `GetCascadeTrajectory` | `cascadeId` | **Full conversation** — all steps with content (3-6+ MB) |
+| `GetCascadeTrajectorySteps` | `cascadeId` | Steps array only (lighter) |
+| `GetArtifactSnapshots` | `cascadeId` | Artifact names + text content |
+| `GetCascadeTrajectoryGeneratorMetadata` | `cascadeId` | Token usage, model names, timing |
 
 > [!IMPORTANT]
-> This plan depends on a **spike** to validate that `GetConversation` returns actual message content. If it doesn't, Phase 1.3 will need to be redesigned around raw file backup + brain log extraction.
+> `trajectoryId` fails for most methods — always use `cascadeId`. See `docs/spike_results.md` for full findings.
 
 ---
 
 ## Phases
 
-### Phase 1.0 — Spike: Validate `GetConversation` Response
+### Phase 1.0 — Spike: Validate `GetConversation` Response ✅ DONE
 
-**Goal:** Determine the exact response structure of the LS `GetConversation` RPC.
-
-#### Tasks
-
-- [ ] Install `antigravity-sdk` as a dev dependency in `src/extension/`
-- [ ] Create a minimal test command in the extension that:
-  1. Initializes the SDK (`AntigravitySDK` + `LSBridge`)
-  2. Calls `sdk.ls.listCascades()` → logs response shape
-  3. Picks a conversation ID and calls `sdk.ls.getConversation(id)` → logs full response
-  4. Calls `sdk.ls.getTrajectoryDescriptions()` → logs response shape
-- [ ] Document the response schemas (what fields exist, is message content included?)
-- [ ] If `GetConversation` doesn't include messages, test `rawRPC` with other potential methods (e.g. `GetCascadeTrajectory`, `GetConversationMessages`)
-
-#### Deliverable
-
-A documented JSON schema of what each LS method returns, confirming whether full message content is accessible.
-
-#### Files Modified
-
-- `src/extension/package.json` — add `antigravity-sdk` dependency
-- `src/extension/extension.ts` — add a temporary spike command
+**Result:** `GetConversation` RPC does NOT exist (404). Discovered `GetCascadeTrajectory` via LS binary reverse-engineering — returns full conversation content. See `docs/spike_results.md`.
 
 ---
 
-### Phase 1.1 — SDK Integration Layer
+### Phase 1.1 — SDK Integration Layer ✅ DONE
 
-**Goal:** Integrate the SDK cleanly into the extension architecture.
-
-#### Tasks
-
-- [ ] Create `src/extension/sdk/` module with initialization logic
-- [ ] Create `SdkManager` class that wraps SDK lifecycle (init, dispose)
-- [ ] Handle SDK initialization failures gracefully (e.g. LS not found)
-- [ ] Register SDK-dependent features only when SDK is available
-- [ ] Add SDK status to the extension's status bar item
-
-#### Files
-
-- `src/extension/sdk/index.ts` — barrel export
-- `src/extension/sdk/sdk-manager.ts` — SDK lifecycle management
-- `src/extension/extension.ts` — wire SdkManager into activation
-
-#### Design Notes
-
-The SDK should be an **optional enhancement** — if the LS is unavailable (e.g. older Antigravity version), the extension should still function with existing features (workspace management via `state.vscdb`).
+**Result:** Created `src/extension/sdk/` module:
+- `ls-types.ts` — TypeScript types for LS RPC responses
+- `ls-client.ts` — Typed wrapper (`getTrajectory()`, `getArtifactSnapshots()`, etc.)
+- `connection.ts` — macOS port discovery via lsof (SDK's built-in uses Linux-only ss/netstat)
+- `sdk-manager.ts` — Lifecycle manager with graceful degradation
 
 ---
 
@@ -82,9 +52,9 @@ spectral-backup-2026-03-16T19-45-00/
 ├── conversations/
 │   ├── {uuid}/
 │   │   ├── metadata.json                  # Title, timestamps, step count, workspace
-│   │   ├── messages.json                  # Full message history (from LS)
+│   │   ├── trajectory.json                # Full trajectory from GetCascadeTrajectory
 │   │   ├── messages.md                    # Human-readable Markdown export
-│   │   └── raw.pb                         # Copy of original .pb file (optional)
+│   │   ├── artifacts.json                 # From GetArtifactSnapshots
 │   └── ...
 ├── brain/
 │   ├── {uuid}/
@@ -136,9 +106,10 @@ spectral-backup-2026-03-16T19-45-00/
 
 - [ ] Create `BackupEngine` class in `src/extension/sdk/`
 - [ ] Implement conversation export:
-  1. `sdk.ls.listCascades()` → get all conversation IDs
-  2. For each: `sdk.ls.getConversation(id)` → extract content
-  3. Serialize to JSON + Markdown using backup-writer
+  1. `lsClient.listCascades()` → get all cascadeIds
+  2. For each: `lsClient.getTrajectory(cascadeId)` → full steps
+  3. For each: `lsClient.getArtifactSnapshots(cascadeId)` → artifact text
+  4. Serialize to JSON + Markdown using backup-writer
 - [ ] Implement file-system backup:
   1. Copy `brain/` directory tree
   2. Copy `knowledge/` directory tree
@@ -189,7 +160,7 @@ setInterval(() => fullBackup(), settings.intervalMs);
   "spectralCuriosity.backup.includeKnowledge": { "type": "boolean", "default": true },
   "spectralCuriosity.backup.includeBrain": { "type": "boolean", "default": true },
   "spectralCuriosity.backup.includeSkills": { "type": "boolean", "default": true },
-  "spectralCuriosity.backup.includeRawPb": { "type": "boolean", "default": false }
+  "spectralCuriosity.backup.includeTokenMetadata": { "type": "boolean", "default": false }
 }
 ```
 
