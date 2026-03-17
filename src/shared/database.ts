@@ -1,7 +1,7 @@
 /**
  * Abstract database adapter for SQLite access.
  *
- * Both bun:sqlite and better-sqlite3 implement this interface.
+ * Both bun:sqlite and node-sqlite3-wasm implement this interface.
  * Each platform injects its adapter at startup via setDbFactory().
  */
 

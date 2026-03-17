@@ -77,6 +77,17 @@ export class SpectralPanel implements vscode.Disposable {
     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(distUri, "webview.js"));
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(distUri, "webview.css"));
 
+    // Local font URIs
+    const fontsUri = vscode.Uri.joinPath(distUri, "fonts");
+    const interRegular = webview.asWebviewUri(vscode.Uri.joinPath(fontsUri, "inter-regular.woff2"));
+    const interMedium = webview.asWebviewUri(vscode.Uri.joinPath(fontsUri, "inter-medium.woff2"));
+    const interSemibold = webview.asWebviewUri(
+      vscode.Uri.joinPath(fontsUri, "inter-semibold.woff2"),
+    );
+    const jetbrainsMono = webview.asWebviewUri(
+      vscode.Uri.joinPath(fontsUri, "jetbrains-mono-regular.woff2"),
+    );
+
     const nonce = getNonce();
 
     return `<!DOCTYPE html>
@@ -84,10 +95,13 @@ export class SpectralPanel implements vscode.Disposable {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'nonce-${nonce}';">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+  <style>
+    @font-face { font-family: 'Inter'; font-weight: 400; font-style: normal; font-display: swap; src: url('${interRegular}') format('woff2'); }
+    @font-face { font-family: 'Inter'; font-weight: 500; font-style: normal; font-display: swap; src: url('${interMedium}') format('woff2'); }
+    @font-face { font-family: 'Inter'; font-weight: 600; font-style: normal; font-display: swap; src: url('${interSemibold}') format('woff2'); }
+    @font-face { font-family: 'JetBrains Mono'; font-weight: 400; font-style: normal; font-display: swap; src: url('${jetbrainsMono}') format('woff2'); }
+  </style>
   <link href="${styleUri}" rel="stylesheet">
   <title>Spectral Curiosity</title>
 </head>

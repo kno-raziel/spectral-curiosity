@@ -12,3 +12,5 @@
 !node_modules/prebuild-install/**
 !node_modules/file-uri-to-path/**
 !node_modules/node-addon-api/**
+!node_modules/node-sqlite3-wasm/**
+!node_modules/antigravity-sdk/**

@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { copyFileSync, existsSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync } from "node:fs";
 import * as esbuild from "esbuild";
 
 if (existsSync("../shared/icon.png")) {
@@ -17,6 +17,12 @@ function buildTailwind() {
   });
 }
 
+// Copy local fonts to dist/
+function copyFonts() {
+  console.log("  Copying fonts...");
+  cpSync("../shared/fonts", "dist/fonts", { recursive: true });
+}
+
 // Ensure dist exists
 if (!existsSync("dist")) {
   execSync("mkdir -p dist", { cwd: import.meta.dirname });
@@ -27,7 +33,7 @@ const hostOptions = {
   entryPoints: ["extension.ts"],
   bundle: true,
   outfile: "dist/extension.js",
-  external: ["vscode", "better-sqlite3"],
+  external: ["vscode", "node-sqlite3-wasm"],
   format: "cjs",
   platform: "node",
   target: "node20",
@@ -66,9 +72,11 @@ if (isWatch) {
   const webviewCtx = await esbuild.context(webviewOptions);
   await Promise.all([hostCtx.watch(), webviewCtx.watch()]);
   buildTailwind();
+  copyFonts();
   console.log("👀 Watching for changes...");
 } else {
   await Promise.all([esbuild.build(hostOptions), esbuild.build(webviewOptions)]);
   buildTailwind();
+  copyFonts();
   console.log("✅ Build complete");
 }
