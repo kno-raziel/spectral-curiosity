@@ -3,7 +3,7 @@
 ## Shipped Features (v0.1.0)
 
 ### 1. Full Conversation Backup
-- Command: **Spectral Curiosity: Backup Now**
+- Command: **Spectral: Backup Now**
 - Exports: `trajectory.json` (raw) + `messages.md` (Markdown) + `artifacts.json` + `metadata.json`
 - Atomic writes: temp dir → rename on success
 - Configurable rotation (keeps last N backups)

@@ -39,7 +39,7 @@ if (!existsSync("dist")) {
 const optionalExternals = {
   name: "optional-externals",
   setup(build) {
-    const modules = ["node-sqlite3-wasm"];
+    const modules = [];
     const filter = new RegExp(`^(${modules.join("|")})$`);
 
     build.onResolve({ filter }, (args) => ({
@@ -63,7 +63,7 @@ const hostOptions = {
   entryPoints: ["extension.ts"],
   bundle: true,
   outfile: "dist/extension.js",
-  external: ["vscode"],
+  external: ["vscode", "node-sqlite3-wasm"],
   plugins: [optionalExternals],
   format: "cjs",
   platform: "node",

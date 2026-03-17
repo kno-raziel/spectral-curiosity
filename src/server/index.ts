@@ -1,5 +1,5 @@
 /**
- * Bun 1.3 full-stack server for Spectral Curiosity
+ * Bun 1.3 full-stack server for Spectral
  *
  * Single process: API routes + React SPA with HMR.
  * No Vite, no CORS, no concurrently.
@@ -131,7 +131,7 @@ Bun.serve({
 
 console.log();
 console.log("═══════════════════════════════════════════════");
-console.log("  ⚡ Spectral Curiosity — Bun Full-Stack");
+console.log("  ⚡ Spectral — Bun Full-Stack");
 console.log("═══════════════════════════════════════════════");
 console.log();
 console.log(`  App:  http://localhost:${PORT}`);

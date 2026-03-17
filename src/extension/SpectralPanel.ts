@@ -2,12 +2,12 @@ import * as vscode from "vscode";
 import { handleMessage } from "./messageHandler";
 
 /**
- * Manages the Spectral Curiosity webview panel.
+ * Manages the Spectral webview panel.
  * Singleton pattern — only one panel at a time.
  */
 export class SpectralPanel implements vscode.Disposable {
   public static currentPanel: SpectralPanel | undefined;
-  private static readonly viewType = "spectralCuriosity";
+  private static readonly viewType = "spectral";
 
   private readonly panel: vscode.WebviewPanel;
   private readonly extensionUri: vscode.Uri;
@@ -49,7 +49,7 @@ export class SpectralPanel implements vscode.Disposable {
 
     const panel = vscode.window.createWebviewPanel(
       SpectralPanel.viewType,
-      "⚡ Spectral Curiosity",
+      "⚡ Spectral — Antigravity Backup & Sync",
       vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -103,7 +103,7 @@ export class SpectralPanel implements vscode.Disposable {
     @font-face { font-family: 'JetBrains Mono'; font-weight: 400; font-style: normal; font-display: swap; src: url('${jetbrainsMono}') format('woff2'); }
   </style>
   <link href="${styleUri}" rel="stylesheet">
-  <title>Spectral Curiosity</title>
+  <title>Spectral</title>
 </head>
 <body>
   <div id="root"></div>

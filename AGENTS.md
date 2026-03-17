@@ -1,10 +1,10 @@
-# AGENTS.md — Spectral Curiosity
+# AGENTS.md — Spectral
 
-Universal AI agent context for Spectral Curiosity.
+Universal AI agent context for Spectral.
 
 ## Project Overview
 
-**Spectral Curiosity** is an Antigravity Workspace Manager — a zero-dependency tool to explore, search, and manage [Antigravity](https://antigravity.dev) AI conversation workspace associations. Runs as a **Bun full-stack app** or as a **VS Code / Antigravity extension**.
+**Spectral** is an Antigravity Backup & Sync tool — a zero-dependency tool to backup, export, and manage [Antigravity](https://antigravity.dev) AI conversations. Runs as a **Bun full-stack app** or as a **VS Code / Antigravity extension**.
 
 ## Tech Stack
 

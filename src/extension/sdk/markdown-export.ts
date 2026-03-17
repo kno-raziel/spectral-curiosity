@@ -22,7 +22,7 @@ export function renderTrajectoryMarkdown(trajectory: FullTrajectory, title: stri
 
   lines.push(`# ${escapeMarkdownTitle(title)}`);
   lines.push("");
-  lines.push(`> Exported from Spectral Curiosity — ${steps.length} steps`);
+  lines.push(`> Exported from Spectral — ${steps.length} steps`);
   lines.push(`> Trajectory: \`${traj.trajectoryId}\``);
   lines.push(`> Cascade: \`${traj.cascadeId}\``);
   lines.push("");

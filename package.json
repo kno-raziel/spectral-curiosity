@@ -1,8 +1,8 @@
 {
-  "name": "spectral-curiosity",
+  "name": "spectral",
   "private": false,
   "version": "0.1.0",
-  "description": "Antigravity Workspace Manager — Fix and manage conversation workspace associations",
+  "description": "Backup, sync, and manage Antigravity conversations",
   "type": "module",
   "scripts": {
     "dev": "bunx @tailwindcss/cli -i src/client/index.css -o dist/app.css && bun run src/server/index.ts",
@@ -10,7 +10,7 @@
     "build:ext": "cd src/extension && npm install && node esbuild.mjs",
     "watch:ext": "cd src/extension && node esbuild.mjs --watch",
     "package:ext": "bun run build:ext && cd src/extension && npx @vscode/vsce package",
-    "deploy:ext": "bun run package:ext && antigravity --install-extension src/extension/spectral-curiosity-extension-0.1.0.vsix --force",
+    "deploy:ext": "bun run package:ext && antigravity --install-extension src/extension/spectral-extension-0.1.0.vsix --force",
     "release": "changelogen --release --push",
     "release:dry": "changelogen",
     "check": "bun run typecheck && bun run lint",

@@ -50,7 +50,7 @@ bun run build:ext
 cd src/extension && npx vsce package
 
 # Install in Antigravity
-antigravity --install-extension src/extension/spectral-curiosity-extension-0.1.0.vsix
+antigravity --install-extension src/extension/spectral-extension-0.1.0.vsix
 ```
 
 ## Scripts
@@ -135,7 +135,7 @@ Click **+ Workspace** in the filter bar and provide:
 - **Name** — Display name (e.g., `my-project`)
 - **URI** — Full path (e.g., `/Users/you/projects/my-project`)
 
-Workspaces are saved to `~/.gemini/antigravity/spectral-curiosity-workspaces.json`.
+Workspaces are saved to `~/.gemini/antigravity/spectral-workspaces.json`.
 
 ## License
 

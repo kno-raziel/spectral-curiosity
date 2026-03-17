@@ -49,13 +49,13 @@ export class BackupScheduler implements vscode.Disposable {
   readonly onDidChangeState = this._onDidChangeState.event;
 
   constructor(private readonly context: vscode.ExtensionContext) {
-    this.output = vscode.window.createOutputChannel("Spectral Curiosity — Auto Backup");
+    this.output = vscode.window.createOutputChannel("Spectral — Auto Backup");
 
     // Watch for settings changes
     const configWatcher = vscode.workspace.onDidChangeConfiguration((e) => {
       if (
-        e.affectsConfiguration("spectralCuriosity.backup.enabled") ||
-        e.affectsConfiguration("spectralCuriosity.backup.intervalMinutes")
+        e.affectsConfiguration("spectral.backup.enabled") ||
+        e.affectsConfiguration("spectral.backup.intervalMinutes")
       ) {
         this.reconcile();
       }
@@ -82,7 +82,7 @@ export class BackupScheduler implements vscode.Disposable {
    * Starts or stops the timer as needed.
    */
   private reconcile(): void {
-    const config = vscode.workspace.getConfiguration("spectralCuriosity.backup");
+    const config = vscode.workspace.getConfiguration("spectral.backup");
     const enabled = config.get<boolean>("enabled") ?? false;
     const intervalMinutes = Math.max(
       config.get<number>("intervalMinutes") ?? 60,
@@ -131,7 +131,7 @@ export class BackupScheduler implements vscode.Disposable {
       return;
     }
 
-    const config = vscode.workspace.getConfiguration("spectralCuriosity.backup");
+    const config = vscode.workspace.getConfiguration("spectral.backup");
     const backupDir = config.get<string>("path") || join(homedir(), "antigravity-backups");
 
     this.backupInProgress = true;

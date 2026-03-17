@@ -4,9 +4,8 @@
  * Uses a WebAssembly port of SQLite — no native C++ binaries needed.
  * Works cross-platform without electron-rebuild.
  *
- * Note: node-sqlite3-wasm is handled by the `optionalExternals` esbuild
- * plugin, which wraps the require in try/catch so the extension can
- * activate even when the module isn't available in the VSIX.
+ * node-sqlite3-wasm is listed as a regular esbuild external and resolved
+ * from node_modules/ inside the VSIX at runtime.
  */
 
 import { Database } from "node-sqlite3-wasm";

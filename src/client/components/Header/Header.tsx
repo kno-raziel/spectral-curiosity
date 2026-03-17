@@ -18,7 +18,7 @@ export function Header({ total, assigned, pending, saving, onSave }: HeaderProps
           className="shrink-0"
           aria-labelledby="spectral-logo-title"
         >
-          <title id="spectral-logo-title">Spectral Curiosity</title>
+          <title id="spectral-logo-title">Spectral — Antigravity Backup & Sync</title>
           <defs>
             <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#00f2fe" />
@@ -39,7 +39,7 @@ export function Header({ total, assigned, pending, saving, onSave }: HeaderProps
           </g>
           <polygon points="125,20 95,105 125,105 75,185 105,100 75,100" fill="url(#logoGrad)" />
         </svg>
-        Spectral Curiosity
+        Spectral — Antigravity Backup & Sync
       </h1>
       <div className="flex gap-3 items-center">
         <span className="text-xs text-text-secondary tabular-nums">

@@ -1,8 +1,8 @@
-# Spectral Curiosity — Roadmap
+# Spectral — Roadmap
 
 ## Vision
 
-Spectral Curiosity evolves from a workspace manager into a **complete data sovereignty tool** for Antigravity users — enabling automated conversation backup, full data export, and post-migration viewing.
+Spectral evolves from a workspace manager into a **complete data sovereignty tool** for Antigravity users — enabling automated conversation backup, full data export, and post-migration viewing.
 
 ---
 
@@ -41,7 +41,7 @@ Requires a **spike/POC** to validate that the Language Server's `GetConversation
 
 > **Plan:** [plan_bun_binary_viewer.md](./plan_bun_binary_viewer.md)
 
-Compile Spectral Curiosity into a standalone executable binary with `bun build --compile`. Add a Backup Viewer UI that lets users navigate, search, and read their exported conversations without Antigravity installed.
+Compile Spectral into a standalone executable binary with `bun build --compile`. Add a Backup Viewer UI that lets users navigate, search, and read their exported conversations without Antigravity installed.
 
 ### Goals
 

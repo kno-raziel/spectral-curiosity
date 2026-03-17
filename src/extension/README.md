@@ -49,5 +49,5 @@ Uses `better-sqlite3` with `electron-rebuild` to match the VS Code Electron vers
 Open the command palette (`Cmd+Shift+P`) and run:
 
 ```
-Spectral Curiosity: Open Workspace Manager
+Spectral: Open Workspace Manager
 ```

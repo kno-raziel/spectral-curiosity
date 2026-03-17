@@ -1,4 +1,4 @@
-# CLAUDE.md — Spectral Curiosity
+# CLAUDE.md — Spectral
 
 @import AGENTS.md
 

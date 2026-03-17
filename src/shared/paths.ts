@@ -35,4 +35,4 @@ export const DB_PATH = getDbPath();
 export const GEMINI_DIR = getGeminiDir();
 export const BRAIN_DIR = join(GEMINI_DIR, "brain");
 export const CONVERSATIONS_DIR = join(GEMINI_DIR, "conversations");
-export const WORKSPACE_CONFIG_PATH = join(GEMINI_DIR, "spectral-curiosity-workspaces.json");
+export const WORKSPACE_CONFIG_PATH = join(GEMINI_DIR, "spectral-workspaces.json");

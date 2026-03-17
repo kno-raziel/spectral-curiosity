@@ -11,7 +11,7 @@
 export const BACKUP_FORMAT_VERSION = "1.0.0" as const;
 
 /** Tool identifier written into manifests */
-export const BACKUP_TOOL_NAME = "spectral-curiosity" as const;
+export const BACKUP_TOOL_NAME = "spectral" as const;
 
 // ── Manifest ─────────────────────────────────────────────────────────────────
 

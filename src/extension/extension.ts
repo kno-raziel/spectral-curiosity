@@ -8,20 +8,20 @@ import { BackupScheduler, type BackupSchedulerState } from "./sdk/backup-schedul
 import { SdkManager } from "./sdk/sdk-manager";
 
 export function activate(context: vscode.ExtensionContext) {
-  const openCommand = vscode.commands.registerCommand("spectralCuriosity.open", () => {
+  const openCommand = vscode.commands.registerCommand("spectral.open", () => {
     SpectralPanel.createOrShow(context.extensionUri);
   });
 
   context.subscriptions.push(openCommand);
 
   // ── Backup Now Command ─────────────────────────────────────────────
-  const backupCommand = vscode.commands.registerCommand("spectralCuriosity.backupNow", async () => {
-    const output = vscode.window.createOutputChannel("Spectral Curiosity — Backup");
+  const backupCommand = vscode.commands.registerCommand("spectral.backupNow", async () => {
+    const output = vscode.window.createOutputChannel("Spectral — Backup");
     output.show(true);
     const log = (msg: string) => output.appendLine(msg);
 
     // Get or ask for backup directory
-    const config = vscode.workspace.getConfiguration("spectralCuriosity.backup");
+    const config = vscode.workspace.getConfiguration("spectral.backup");
     let backupDir = config.get<string>("path");
 
     if (!backupDir) {
@@ -32,7 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
         canSelectMany: false,
         defaultUri,
         openLabel: "Select Backup Destination",
-        title: "Where should Spectral Curiosity save backups?",
+        title: "Where should Spectral save backups?",
       });
 
       if (!uri || uri.length === 0) {
@@ -74,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: "Spectral Curiosity: Backup",
+        title: "Spectral: Backup",
         cancellable: false,
       },
       async (progress) => {
@@ -124,9 +124,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   // ── Open Backup Folder Command ─────────────────────────────────────
   const openBackupFolderCommand = vscode.commands.registerCommand(
-    "spectralCuriosity.openBackupFolder",
+    "spectral.openBackupFolder",
     async () => {
-      const config = vscode.workspace.getConfiguration("spectralCuriosity.backup");
+      const config = vscode.workspace.getConfiguration("spectral.backup");
       const backupDir = config.get<string>("path") || join(homedir(), "antigravity-backups");
       const uri = vscode.Uri.file(backupDir);
       await vscode.env.openExternal(uri);
@@ -141,7 +141,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // ── Status Bar ─────────────────────────────────────────────────────
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 50);
-  statusBarItem.command = "spectralCuriosity.backupNow";
+  statusBarItem.command = "spectral.backupNow";
   updateStatusBar(statusBarItem, scheduler.state);
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
@@ -152,8 +152,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(stateWatcher);
 
   // ── SDK Spike Command ──────────────────────────────────────────────
-  const spikeCommand = vscode.commands.registerCommand("spectralCuriosity.sdkSpike", async () => {
-    const output = vscode.window.createOutputChannel("Spectral Curiosity");
+  const spikeCommand = vscode.commands.registerCommand("spectral.sdkSpike", async () => {
+    const output = vscode.window.createOutputChannel("Spectral");
     output.show(true);
     const log = (msg: string) => output.appendLine(msg);
 
@@ -298,13 +298,13 @@ function phaseLabel(phase: string): string {
 function updateStatusBar(item: vscode.StatusBarItem, state: BackupSchedulerState): void {
   if (state.backupInProgress) {
     item.text = "$(sync~spin) Backup…";
-    item.tooltip = "Spectral Curiosity: Backup in progress";
+    item.tooltip = "Spectral: Backup in progress";
     return;
   }
 
   if (state.lastBackupFailed) {
     item.text = "$(warning) Backup";
-    item.tooltip = `Spectral Curiosity: Last backup failed\n${state.lastBackupSummary ?? ""}`;
+    item.tooltip = `Spectral: Last backup failed\n${state.lastBackupSummary ?? ""}`;
     return;
   }
 
@@ -314,17 +314,17 @@ function updateStatusBar(item: vscode.StatusBarItem, state: BackupSchedulerState
       minute: "2-digit",
     });
     item.text = `$(cloud-upload) ${time}`;
-    item.tooltip = `Spectral Curiosity: Last backup at ${time}\n${state.lastBackupSummary ?? ""}\nClick to run backup now`;
+    item.tooltip = `Spectral: Last backup at ${time}\n${state.lastBackupSummary ?? ""}\nClick to run backup now`;
     return;
   }
 
   if (state.running) {
     item.text = "$(cloud-upload) Auto";
-    item.tooltip = "Spectral Curiosity: Auto-backup enabled\nClick to run backup now";
+    item.tooltip = "Spectral: Auto-backup enabled\nClick to run backup now";
     return;
   }
 
   // Scheduler not running, no backup history
   item.text = "$(cloud-upload) Backup";
-  item.tooltip = "Spectral Curiosity: Click to run backup now";
+  item.tooltip = "Spectral: Click to run backup now";
 }
