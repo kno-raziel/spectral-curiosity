@@ -1,10 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { saveChanges } from "./api";
 import { BackupPanel } from "./components/BackupPanel";
+import { BackupViewer } from "./components/BackupViewer";
 import { ConversationCard } from "./components/ConversationCard";
 import { FilterBar, Header } from "./components/Header";
 import { showToast, Toast } from "./components/Toast";
 import { useConversations } from "./hooks/useConversations";
+
+type AppView = "workspaces" | "backups";
 
 export default function App() {
   const {
@@ -24,6 +27,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [bulkWs, setBulkWs] = useState("");
   const [saving, setSaving] = useState(false);
+  const [view, setView] = useState<AppView>("workspaces");
 
   const getEffectiveWs = useCallback(
     (id: string, original: string) => (changes[id] !== undefined ? changes[id] : original),
@@ -138,40 +142,75 @@ export default function App() {
         saving={saving}
         onSave={handleSave}
       />
-      <FilterBar
-        filter={filter}
-        search={search}
-        bulkWs={bulkWs}
-        workspaces={workspaces}
-        onFilterChange={setFilter}
-        onSearchChange={setSearch}
-        onBulkWsChange={setBulkWs}
-        onBulkApply={handleBulkApply}
-      />
-      <main className="max-w-[1400px] mx-auto px-8 py-3 pb-[60px]">
-        {filtered.length === 0 ? (
-          <p className="text-center text-text-secondary py-[60px] text-sm">
-            No conversations match the filter
-          </p>
-        ) : (
-          filtered.map((c, i) => (
-            <ConversationCard
-              key={c.id}
-              num={i + 1}
-              conversation={c}
-              currentWs={getEffectiveWs(c.id, c.workspace)}
-              currentTitle={getEffectiveTitle(c.id, c.title)}
-              isChanged={
-                (changes[c.id] !== undefined && changes[c.id] !== c.workspace) ||
-                (renames[c.id] !== undefined && renames[c.id] !== c.title)
-              }
-              workspaces={workspaces}
-              onAssign={assign}
-              onRename={rename}
-            />
-          ))
-        )}
-      </main>
+
+      {/* View toggle */}
+      <div className="max-w-[1400px] mx-auto px-8 pt-2 pb-1 flex gap-1">
+        <button
+          type="button"
+          onClick={() => setView("workspaces")}
+          className={`px-3 py-1.5 text-[12px] font-medium rounded-md cursor-pointer transition-all duration-150 font-sans border-none ${
+            view === "workspaces"
+              ? "bg-accent-blue/15 text-accent-blue"
+              : "bg-transparent text-text-muted hover:text-text-secondary"
+          }`}
+        >
+          🗂️ Workspaces
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("backups")}
+          className={`px-3 py-1.5 text-[12px] font-medium rounded-md cursor-pointer transition-all duration-150 font-sans border-none ${
+            view === "backups"
+              ? "bg-accent-purple/15 text-accent-purple"
+              : "bg-transparent text-text-muted hover:text-text-secondary"
+          }`}
+        >
+          📦 Backup Viewer
+        </button>
+      </div>
+
+      {view === "backups" ? (
+        <main className="max-w-[1400px] mx-auto px-8 py-3 pb-[60px]">
+          <BackupViewer />
+        </main>
+      ) : (
+        <>
+          <FilterBar
+            filter={filter}
+            search={search}
+            bulkWs={bulkWs}
+            workspaces={workspaces}
+            onFilterChange={setFilter}
+            onSearchChange={setSearch}
+            onBulkWsChange={setBulkWs}
+            onBulkApply={handleBulkApply}
+          />
+          <main className="max-w-[1400px] mx-auto px-8 py-3 pb-[60px]">
+            {filtered.length === 0 ? (
+              <p className="text-center text-text-secondary py-[60px] text-sm">
+                No conversations match the filter
+              </p>
+            ) : (
+              filtered.map((c, i) => (
+                <ConversationCard
+                  key={c.id}
+                  num={i + 1}
+                  conversation={c}
+                  currentWs={getEffectiveWs(c.id, c.workspace)}
+                  currentTitle={getEffectiveTitle(c.id, c.title)}
+                  isChanged={
+                    (changes[c.id] !== undefined && changes[c.id] !== c.workspace) ||
+                    (renames[c.id] !== undefined && renames[c.id] !== c.title)
+                  }
+                  workspaces={workspaces}
+                  onAssign={assign}
+                  onRename={rename}
+                />
+              ))
+            )}
+          </main>
+        </>
+      )}
       <Toast />
       <BackupPanel />
     </>

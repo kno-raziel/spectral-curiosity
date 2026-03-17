@@ -7,16 +7,25 @@
 
 import app from "../../index.html";
 import { saveAssignments } from "../shared/assignments";
+import { BackupReader } from "../shared/backup-reader";
 import { diffSnapshots, listBackups } from "../shared/backups";
 import { loadConversations } from "../shared/conversations";
 import { BRAIN_DIR, CONVERSATIONS_DIR, DB_PATH } from "../shared/paths";
 import { loadWorkspaces } from "../shared/workspaces";
 import { initBunAdapters } from "./adapter";
+import { handleBackupRoute } from "./routes/backup-viewer";
 
 // Initialize platform adapters before any data access
 initBunAdapters();
 
 const PORT = 3000;
+
+// Initialize backup reader if a backup directory is configured
+import { homedir } from "node:os";
+import { join } from "node:path";
+
+const backupDir = process.env.SPECTRAL_BACKUP_DIR || join(homedir(), "antigravity-backups");
+const backupReader = new BackupReader(backupDir);
 
 Bun.serve({
   port: PORT,
@@ -97,19 +106,19 @@ Bun.serve({
         }),
     },
 
-    "/api/backups": {
+    "/api/snapshots": {
       GET: async () => {
         try {
-          const backups = await listBackups();
-          return Response.json(backups);
+          const snapshots = await listBackups();
+          return Response.json(snapshots);
         } catch (err) {
-          console.error("[GET /api/backups]", err);
-          return Response.json({ error: "Failed to list backups" }, { status: 500 });
+          console.error("[GET /api/snapshots]", err);
+          return Response.json({ error: "Failed to list snapshots" }, { status: 500 });
         }
       },
     },
 
-    "/api/backups/diff": {
+    "/api/snapshots/diff": {
       GET: async (req: Request) => {
         try {
           const url = new URL(req.url);
@@ -118,9 +127,23 @@ Bun.serve({
           const result = diffSnapshots(a, b);
           return Response.json(result);
         } catch (err) {
-          console.error("[GET /api/backups/diff]", err);
+          console.error("[GET /api/snapshots/diff]", err);
           return Response.json({ error: "Failed to diff snapshots" }, { status: 500 });
         }
+      },
+    },
+
+    // ── Backup Viewer API (wildcard — dynamic path params) ──
+    "/api/backups": {
+      GET: async (req: Request) => {
+        const response = await handleBackupRoute(req, backupReader);
+        return response ?? Response.json({ error: "Not found" }, { status: 404 });
+      },
+    },
+    "/api/backups/*": {
+      GET: async (req: Request) => {
+        const response = await handleBackupRoute(req, backupReader);
+        return response ?? Response.json({ error: "Not found" }, { status: 404 });
       },
     },
 

@@ -1,202 +1,252 @@
-# Plan: Standalone Binary + Backup Viewer
+# Plan: Phase 2 — Standalone Binary + Backup Viewer
 
 ## Goal
 
-Compile Spectral Curiosity into a standalone executable binary using `bun build --compile` and add a Backup Viewer UI that allows users to navigate, search, and read their exported conversations without Antigravity installed.
+Add a **Backup Viewer** to Spectral that lets users browse, search, and read their backed-up conversations from Phase 1 — without Antigravity installed. Delivered in two rounds:
+
+- **Round 1** (this plan): Backup Reader + API Routes + Viewer UI
+- **Round 2** (separate plan): CLI + Binary Compilation + Distribution
 
 ## Background
 
-After Phase 1 (Extension SDK Backup) exports conversations to a portable JSON + Markdown format, users need a way to browse that data independently. This plan produces a zero-dependency binary that serves the existing React UI and adds a dedicated Backup Viewer mode.
+Phase 1 exports conversations to a portable format (`manifest.json`, `trajectory.json`, `messages.md`, per-conversation metadata). The viewer reads this on-disk format and renders it in the existing React SPA.
 
 > [!IMPORTANT]
-> This plan depends on the **backup format** defined in [Phase 1.2 of plan_extension_sdk_backup.md](./plan_extension_sdk_backup.md). The `manifest.json` schema and directory structure must be finalized before implementing the reader.
+> This plan reads the backup format defined in [Phase 1.2](./plan_extension_sdk_backup.md). Types come from `shared/backup-format.ts`.
 
 ---
 
-## Phases
+## Decisions (Confirmed)
 
-### Phase 2.0 — Binary Compilation Pipeline
+1. **Route rename:** existing `/api/backups` → `/api/snapshots` (cleaner namespace)
+2. **CLI parser:** zero-dep `Bun.argv` (deferred to Round 2)
+3. **Scope:** UI-first — build the viewer before packaging the binary
 
-**Goal:** Produce standalone executables for macOS, Linux, and Windows.
+---
 
-#### Tasks
+## Proposed Changes
 
-- [ ] Add `build:binary` script to `package.json`
-- [ ] Configure `bun build --compile` with embedded assets (HTML, CSS, JS)
-- [ ] Test compilation on macOS (arm64)
-- [ ] Add cross-compilation targets (linux-x64, windows-x64)
-- [ ] Verify the binary starts, serves the React SPA, and accesses `state.vscdb`
-- [ ] Document binary size and startup time
+### Route Rename (prerequisite)
 
-#### Commands
+Rename existing snapshot routes to free `/api/backups` for the viewer.
 
-```bash
-# Development build (current platform)
-bun build --compile src/server/index.ts --outfile dist/spectral-curiosity
+#### [MODIFY] [index.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/server/index.ts)
 
-# Cross-platform release builds
-bun build --compile --target=bun-darwin-arm64 src/server/index.ts --outfile dist/spectral-curiosity-macos-arm64
-bun build --compile --target=bun-darwin-x64 src/server/index.ts --outfile dist/spectral-curiosity-macos-x64
-bun build --compile --target=bun-linux-x64 src/server/index.ts --outfile dist/spectral-curiosity-linux-x64
-bun build --compile --target=bun-windows-x64 src/server/index.ts --outfile dist/spectral-curiosity.exe
+- `/api/backups` → `/api/snapshots`
+- `/api/backups/diff` → `/api/snapshots/diff`
+
+#### [MODIFY] [api.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/client/api.ts)
+
+- `fetchBackups()` → `fetchSnapshots()` — update URL to `/api/snapshots`
+- `fetchDiff()` → update URL to `/api/snapshots/diff`
+
+#### [MODIFY] [BackupPanel/](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/client/components/BackupPanel)
+
+- Update imports to use the renamed functions
+
+---
+
+### Shared Trajectory Types
+
+The viewer UI needs to render trajectory steps on the client side. The step types currently live in `extension/sdk/ls-types.ts` (which is excluded from the main `tsconfig.json`). We'll extract the renderable types into `shared/`.
+
+#### [NEW] [trajectory-types.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/shared/trajectory-types.ts)
+
+Extract from `extension/sdk/ls-types.ts` into shared:
+
+- `StepType` — the discriminated union (`CORTEX_STEP_TYPE_USER_INPUT`, etc.)
+- `StepStatus` — done/running/error
+- `StepMetadata` — timestamps, source
+- `TrajectoryStep` — the big union with `userInput?`, `plannerResponse?`, `runCommand?`, etc.
+- `FullTrajectory` — wraps the array of steps + metadata
+
+These types are **read-only** for the viewer (no write operations). The extension continues importing from its own `ls-types.ts` to avoid coupling.
+
+---
+
+### Backup Reader (Shared Module)
+
+#### [NEW] [backup-reader.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/shared/backup-reader.ts)
+
+Platform-agnostic reader for Phase 1 backup directories:
+
+```typescript
+class BackupReader {
+  constructor(backupRootDir: string);
+
+  /** List all backup directories (sorted newest first) */
+  listBackups(): Promise<BackupSummary[]>;
+
+  /** Manifest for a specific backup */
+  getManifest(backupId: string): Promise<BackupManifest>;
+
+  /** All conversations in a backup */
+  listConversations(backupId: string): Promise<ConversationBackupMeta[]>;
+
+  /** Full trajectory (steps array) for a conversation */
+  getTrajectory(backupId: string, convId: string): Promise<FullTrajectory>;
+
+  /** Artifact snapshots */
+  getArtifacts(backupId: string, convId: string): Promise<ArtifactSnapshot[]>;
+
+  /** Human-readable markdown export */
+  getMarkdown(backupId: string, convId: string): Promise<string>;
+
+  /** Full-text search across messages.md files */
+  search(backupId: string, query: string): Promise<SearchResult[]>;
+}
 ```
 
-#### Files
+- `backupId` = directory name (e.g. `spectral-backup-2026-03-16T19-45-00`)
+- Lazy: reads files on demand, no upfront load
+- Search scans `messages.md` (smaller than `trajectory.json`)
 
-- `package.json` — add `build:binary` and `build:binary:all` scripts
+#### [NEW] [backup-reader-types.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/shared/backup-reader-types.ts)
 
----
+```typescript
+interface BackupSummary {
+  id: string;              // directory name
+  path: string;
+  createdAt: string;
+  conversationCount: number;
+  totalSizeBytes: number;
+  strategy: BackupStrategy;
+}
 
-### Phase 2.1 — Backup Reader (Shared Module)
-
-**Goal:** Implement the `backup-reader` module in `src/shared/` so both runtimes can consume backup directories.
-
-#### Tasks
-
-- [ ] Implement `BackupReader` class: read `manifest.json`, list conversations, parse `metadata.json`, load `messages.json`
-- [ ] Implement search across backed-up conversations (title, content full-text)
-- [ ] Implement filtering (by date range, workspace, tag)
-- [ ] Handle multiple backup directories (list all, compare)
-
-#### Files
-
-- `src/shared/backup-reader.ts` — core reader logic
-- `src/shared/backup-types.ts` — TypeScript types for backup format (from Phase 1.2)
-
----
-
-### Phase 2.2 — Backup Viewer API Routes
-
-**Goal:** Add API routes to the Bun server for serving backup data.
-
-#### Tasks
-
-- [ ] Add `GET /api/backups` — list available backup directories
-- [ ] Add `GET /api/backups/:id` — get manifest for a specific backup
-- [ ] Add `GET /api/backups/:id/conversations` — list conversations in backup
-- [ ] Add `GET /api/backups/:id/conversations/:convId` — get full conversation content
-- [ ] Add `GET /api/backups/:id/conversations/:convId/messages` — get messages
-- [ ] Add `GET /api/backups/:id/knowledge` — list Knowledge Items
-- [ ] Add `GET /api/backups/:id/search?q=term` — full-text search
-- [ ] Support configurable backup root path via CLI argument or env var
-
-#### Files
-
-- `src/server/routes/backups.ts` — backup API route handlers
-- `src/server/index.ts` — mount backup routes
+interface SearchResult {
+  conversationId: string;
+  title: string;
+  matches: Array<{ line: number; content: string }>;
+}
+```
 
 ---
 
-### Phase 2.3 — Backup Viewer UI
+### Backup Viewer API Routes
 
-**Goal:** React UI for browsing backed-up conversations.
+#### [NEW] [backup-viewer.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/server/routes/backup-viewer.ts)
 
-#### Tasks
+| Method | Route | Returns |
+|--------|-------|---------|
+| `GET` | `/api/backups` | List backup directories |
+| `GET` | `/api/backups/:id` | Manifest |
+| `GET` | `/api/backups/:id/conversations` | Conversation list |
+| `GET` | `/api/backups/:id/conversations/:convId` | Full trajectory |
+| `GET` | `/api/backups/:id/conversations/:convId/markdown` | Markdown export |
+| `GET` | `/api/backups/:id/search?q=term` | Search results |
 
-- [ ] Add a "Backups" tab/view to the existing React app
-- [ ] Backup list view: show all backups with date, conversation count, size
-- [ ] Conversation list view: show conversations within a backup (searchable, filterable)
-- [ ] Conversation detail view: render messages as a chat-like UI
-  - User messages vs AI messages (distinct styling)
-  - Code blocks with syntax highlighting
-  - Tool calls / file edits displayed
-- [ ] Knowledge Items viewer: browse KIs from backup
-- [ ] Search: full-text search across all conversations in a backup
-- [ ] Diff view: compare two backups (what changed)
+Exports a `handleBackupRoute(req, reader): Response | null` since Bun.serve uses static route keys.
 
-#### Files
+#### [MODIFY] [index.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/server/index.ts)
 
-- `src/client/components/BackupViewer/` — new component folder
-  - `BackupList.tsx` — list of available backups
-  - `ConversationList.tsx` — conversations within a backup
-  - `ConversationDetail.tsx` — message history viewer
-  - `MessageBubble.tsx` — individual message rendering
-  - `KnowledgeViewer.tsx` — KI browser
-  - `SearchView.tsx` — search results
-- `src/client/hooks/useBackups.ts` — data fetching hooks
-- `src/client/api.ts` — add backup API endpoints
+- Instantiate `BackupReader` with configurable path (env var `SPECTRAL_BACKUP_DIR` or default `~/antigravity-backups`)
+- Add fallback handler before `/*` catch-all that delegates to `handleBackupRoute`
 
 ---
 
-### Phase 2.4 — CLI Mode
+### Backup Viewer UI
 
-**Goal:** Support command-line usage for scripting and automation.
+New React components for browsing backed-up conversations.
 
-#### Tasks
+#### [NEW] `src/client/components/BackupViewer/`
 
-- [ ] Parse CLI args: `spectral-curiosity [command] [options]`
-- [ ] `spectral-curiosity serve` — start web server (default behavior)
-- [ ] `spectral-curiosity serve --backup-dir ~/my-backups` — serve with backup viewer
-- [ ] `spectral-curiosity export --format json --output ./export` — export from `state.vscdb` (no SDK, file-level only)
-- [ ] `spectral-curiosity info` — show detected Antigravity installation info
+| File | Purpose |
+|------|---------|
+| `BackupViewer.tsx` | Root component — tab-based navigation between backup list and detail |
+| `BackupList.tsx` | Cards showing each backup with date, count, size |
+| `ConversationList.tsx` | Searchable/filterable list within a backup |
+| `ConversationDetail.tsx` | Full conversation renderer — dispatches to step components |
+| `steps/UserMessage.tsx` | `💬 User` — renders user input |
+| `steps/AssistantMessage.tsx` | `🤖 Assistant` — renders planner response with markdown |
+| `steps/ToolCall.tsx` | Generic tool step (command, view file, write, search) — collapsible |
+| `steps/TaskBoundary.tsx` | `📋 Task` — section header |
+| `steps/Notification.tsx` | `📢 Notification` — with files for review |
+| `SearchResults.tsx` | Full-text search results with snippets |
+| `index.ts` | Barrel export |
 
-#### Files
+Design approach:
+- **Chat-like layout**: user messages on right, assistant on left
+- **Collapsible tool calls**: tool steps (view_file, run_command, grep, etc.) are collapsed by default — click to expand details
+- **Code blocks**: syntax-highlighted with Bun's built-in CSS (no extra dependency)
+- **Step type discriminator**: mirrors the `switch` in `markdown-export.ts` but renders React components
+- **Dark theme**: matches existing Spectral UI
 
-- `src/server/cli.ts` — CLI argument parser
-- `src/server/index.ts` — integrate CLI parsing
+#### [NEW] [useBackups.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/client/hooks/useBackups.ts)
 
----
+React hooks for backup data:
 
-### Phase 2.5 — Distribution
+```typescript
+function useBackupList(): { backups, loading, error };
+function useConversationList(backupId): { conversations, loading, error };
+function useConversation(backupId, convId): { trajectory, loading, error };
+function useBackupSearch(backupId, query): { results, loading };
+```
 
-**Goal:** Publish binaries and make the tool easy to install.
+#### [MODIFY] [api.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/client/api.ts)
 
-#### Tasks
+Add backup viewer fetch functions:
+- `fetchBackupList()` — `GET /api/backups`
+- `fetchBackupConversations(id)` — `GET /api/backups/:id/conversations`
+- `fetchBackupConversation(id, convId)` — `GET /api/backups/:id/conversations/:convId`
+- `fetchBackupSearch(id, query)` — `GET /api/backups/:id/search?q=`
 
-- [ ] GitHub Actions workflow: build binaries on tag push
-- [ ] Create GitHub Release with artifacts (macOS, Linux, Windows)
-- [ ] Add `npx spectral-curiosity` support (npm package with `bin` field)
-- [ ] Update README with installation instructions for all methods
-- [ ] Add Homebrew formula (future, optional)
+#### [MODIFY] [App.tsx](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/client/App.tsx)
 
-#### Files
-
-- `.github/workflows/release.yml` — CI/CD release pipeline
-- `package.json` — `bin` field for npx support
-- `README.md` — installation documentation
+- Add a tab/view toggle between "Workspace Manager" (current) and "Backup Viewer" (new)
+- Conditionally render `BackupViewer` or existing content based on active tab
 
 ---
 
 ## Verification Plan
 
-### Phase 2.0 (Binary Compilation)
-
-1. Run `bun run build:binary`
-2. Execute the resulting binary: `./dist/spectral-curiosity`
-3. Verify: web server starts on port 3000
-4. Verify: existing features work (workspace list, conversations, search)
-5. Check binary size is reasonable (< 80MB)
-
-### Phase 2.1–2.2 (Backup Reader + API)
-
-1. **Prerequisite:** Have at least one backup directory from Phase 1
-2. Run `bun run dev`
-3. `curl http://localhost:3000/api/backups` → returns list of backups
-4. `curl http://localhost:3000/api/backups/{id}/conversations` → returns conversations
-5. `curl http://localhost:3000/api/backups/{id}/conversations/{conv}/messages` → returns messages
-6. Verify search: `curl http://localhost:3000/api/backups/{id}/search?q=test` → returns results
-
-### Phase 2.3 (Backup Viewer UI)
-
-1. Open `http://localhost:3000` in browser
-2. Click "Backups" tab
-3. Verify: backup list shows with dates and counts
-4. Click a backup → conversation list appears
-5. Click a conversation → messages render with chat-like styling
-6. Search for a term → results highlight
-7. Test on mobile viewport (responsive)
-
-### Phase 2.4 (CLI)
+### Automated — Typecheck + Lint
 
 ```bash
-./dist/spectral-curiosity --help           # shows usage
-./dist/spectral-curiosity serve            # starts server
-./dist/spectral-curiosity info             # shows Antigravity paths
-./dist/spectral-curiosity export --output /tmp/test-export  # exports
+bun run check
 ```
 
-### Phase 2.5 (Distribution)
+Zero errors after all changes.
 
-1. Push a git tag → GitHub Actions builds binaries
-2. Check GitHub Release page for all three platform binaries
-3. Test `npx spectral-curiosity serve` from a clean machine
+### Manual — Route Rename
+
+1. Run `bun run dev`
+2. Verify old URL is gone: `curl http://localhost:3000/api/backups` → should NOT return snapshot list
+3. Verify renamed URL works: `curl http://localhost:3000/api/snapshots` → returns snapshot list
+4. Open browser → existing BackupPanel/DiffControls still work with the renamed endpoints
+
+### Manual — Backup Viewer API
+
+> Requires at least one backup from Phase 1 ("Spectral: Backup Now" in extension).
+
+```bash
+# Set backup directory
+export SPECTRAL_BACKUP_DIR=~/antigravity-backups
+
+bun run dev
+
+# In another terminal:
+curl http://localhost:3000/api/backups
+# → JSON array of backup summaries
+
+curl http://localhost:3000/api/backups/{id}/conversations
+# → JSON array of conversation metadata
+
+curl http://localhost:3000/api/backups/{id}/conversations/{convId}
+# → Full trajectory JSON
+
+curl http://localhost:3000/api/backups/{id}/search?q=typescript
+# → Search results with line numbers
+```
+
+### Manual — Backup Viewer UI
+
+1. Open `http://localhost:3000` in browser
+2. Verify a "Backup Viewer" tab/link is visible in the header
+3. Click "Backup Viewer" → backup list loads with cards (date, count, size)
+4. Click a backup → conversation list with titles and dates
+5. Click a conversation → messages render:
+   - User messages styled distinctly from assistant responses
+   - Tool calls (run_command, view_file, etc.) are collapsible
+   - Code blocks are legible
+6. Use the search bar → results show matching conversations with snippets
+7. Navigate back → state is preserved
