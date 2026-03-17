@@ -112,17 +112,61 @@ export interface DiffResult {
   totalB: number;
 }
 
-export async function fetchBackups(): Promise<BackupEntry[]> {
+export async function fetchSnapshots(): Promise<BackupEntry[]> {
   if (isVsCodeWebview) return postMessageRequest("getBackups");
+  const res = await fetch(`${API_BASE}/api/snapshots`);
+  if (!res.ok) throw new Error("Failed to load snapshots");
+  return res.json();
+}
+
+export async function fetchSnapshotDiff(pathA: string, pathB: string): Promise<DiffResult> {
+  if (isVsCodeWebview) return postMessageRequest("diffBackups", { a: pathA, b: pathB });
+  const params = new URLSearchParams({ a: pathA, b: pathB });
+  const res = await fetch(`${API_BASE}/api/snapshots/diff?${params}`);
+  if (!res.ok) throw new Error("Failed to load diff");
+  return res.json();
+}
+
+// ─── Backup Viewer API ──────────────────────────────────────────────────────
+
+import type { ConversationBackupMeta } from "../shared/backup-format";
+import type { BackupSummary, SearchResult } from "../shared/backup-reader-types";
+import type { FullTrajectory } from "../shared/trajectory-types";
+
+export async function fetchBackupList(): Promise<BackupSummary[]> {
+  if (isVsCodeWebview) return postMessageRequest("listBackups");
   const res = await fetch(`${API_BASE}/api/backups`);
   if (!res.ok) throw new Error("Failed to load backups");
   return res.json();
 }
 
-export async function fetchDiff(pathA: string, pathB: string): Promise<DiffResult> {
-  if (isVsCodeWebview) return postMessageRequest("diffBackups", { a: pathA, b: pathB });
-  const params = new URLSearchParams({ a: pathA, b: pathB });
-  const res = await fetch(`${API_BASE}/api/backups/diff?${params}`);
-  if (!res.ok) throw new Error("Failed to load diff");
+export async function fetchBackupConversations(
+  backupId: string,
+): Promise<ConversationBackupMeta[]> {
+  if (isVsCodeWebview) return postMessageRequest("listBackupConversations", { backupId });
+  const res = await fetch(`${API_BASE}/api/backups/${encodeURIComponent(backupId)}/conversations`);
+  if (!res.ok) throw new Error("Failed to load conversations");
+  return res.json();
+}
+
+export async function fetchBackupTrajectory(
+  backupId: string,
+  convId: string,
+): Promise<FullTrajectory> {
+  if (isVsCodeWebview) return postMessageRequest("getBackupTrajectory", { backupId, convId });
+  const res = await fetch(
+    `${API_BASE}/api/backups/${encodeURIComponent(backupId)}/conversations/${encodeURIComponent(convId)}`,
+  );
+  if (!res.ok) throw new Error("Failed to load trajectory");
+  return res.json();
+}
+
+export async function fetchBackupSearch(backupId: string, query: string): Promise<SearchResult[]> {
+  if (isVsCodeWebview) return postMessageRequest("searchBackup", { backupId, query });
+  const params = new URLSearchParams({ q: query });
+  const res = await fetch(
+    `${API_BASE}/api/backups/${encodeURIComponent(backupId)}/search?${params}`,
+  );
+  if (!res.ok) throw new Error("Failed to search");
   return res.json();
 }

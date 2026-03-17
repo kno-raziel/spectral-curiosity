@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { type BackupEntry, type DiffResult, fetchBackups, fetchDiff } from "../../api";
+import { type BackupEntry, type DiffResult, fetchSnapshotDiff, fetchSnapshots } from "../../api";
 import { BackupTable } from "./BackupTable";
 import { DiffControls } from "./DiffControls";
 import { DiffTable } from "./DiffTable";
@@ -19,7 +19,7 @@ export function BackupPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchBackups();
+      const data = await fetchSnapshots();
       setBackups(data);
       if (data.length > 0 && !selectedB) {
         setSelectedB(data[0].path);
@@ -41,7 +41,7 @@ export function BackupPanel() {
     if (!selectedA || !selectedB) return;
     setDiffLoading(true);
     try {
-      const result = await fetchDiff(selectedA, selectedB);
+      const result = await fetchSnapshotDiff(selectedA, selectedB);
       setDiff(result);
     } catch (err) {
       console.error("Failed to diff", err);
