@@ -24,8 +24,8 @@ const PORT = 3000;
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-const backupDir = process.env.SPECTRAL_BACKUP_DIR || join(homedir(), "antigravity-backups");
-const backupReader = new BackupReader(backupDir);
+let currentBackupDir = process.env.SPECTRAL_BACKUP_DIR || join(homedir(), "antigravity-backups");
+let backupReader = new BackupReader(currentBackupDir);
 
 Bun.serve({
   port: PORT,
@@ -129,6 +129,26 @@ Bun.serve({
         } catch (err) {
           console.error("[GET /api/snapshots/diff]", err);
           return Response.json({ error: "Failed to diff snapshots" }, { status: 500 });
+        }
+      },
+    },
+
+    // ── Backup directory config ──
+    "/api/backups/config": {
+      GET: () => Response.json({ directory: currentBackupDir }),
+      POST: async (req: Request) => {
+        try {
+          const body = (await req.json()) as { directory?: string };
+          if (!body.directory) {
+            return Response.json({ error: "Missing 'directory' field" }, { status: 400 });
+          }
+          currentBackupDir = body.directory;
+          backupReader = new BackupReader(currentBackupDir);
+          console.log(`[Config] Backup directory changed to: ${currentBackupDir}`);
+          return Response.json({ directory: currentBackupDir });
+        } catch (err) {
+          console.error("[POST /api/backups/config]", err);
+          return Response.json({ error: "Failed to update config" }, { status: 500 });
         }
       },
     },

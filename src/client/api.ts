@@ -170,3 +170,79 @@ export async function fetchBackupSearch(backupId: string, query: string): Promis
   if (!res.ok) throw new Error("Failed to search");
   return res.json();
 }
+
+// ─── Brain Explorer API ─────────────────────────────────────────────────────
+
+import type { FileTreeNode, KnowledgeTopic } from "../shared/backup-reader";
+
+export async function fetchBrainTree(backupId: string, convId: string): Promise<FileTreeNode[]> {
+  const res = await fetch(
+    `${API_BASE}/api/backups/${encodeURIComponent(backupId)}/brain/${encodeURIComponent(convId)}/tree`,
+  );
+  if (!res.ok) throw new Error("Failed to load brain tree");
+  return res.json();
+}
+
+/** Build URL for serving a brain file (images, etc.) */
+export function brainFileUrl(backupId: string, convId: string, filePath: string): string {
+  const params = new URLSearchParams({ path: filePath });
+  return `${API_BASE}/api/backups/${encodeURIComponent(backupId)}/brain/${encodeURIComponent(convId)}/file?${params}`;
+}
+
+export async function fetchBrainFileContent(
+  backupId: string,
+  convId: string,
+  filePath: string,
+): Promise<string> {
+  const res = await fetch(brainFileUrl(backupId, convId, filePath));
+  if (!res.ok) throw new Error("Failed to load file");
+  return res.text();
+}
+
+// ─── Knowledge Base API ─────────────────────────────────────────────────────
+
+export async function fetchKnowledgeTopics(backupId: string): Promise<KnowledgeTopic[]> {
+  const res = await fetch(`${API_BASE}/api/backups/${encodeURIComponent(backupId)}/knowledge`);
+  if (!res.ok) throw new Error("Failed to load knowledge topics");
+  return res.json();
+}
+
+export async function fetchKnowledgeArtifact(
+  backupId: string,
+  topicId: string,
+  filePath: string,
+): Promise<string> {
+  // Encode each path segment separately to support nested paths
+  const encodedPath = filePath
+    .split("/")
+    .map((s) => encodeURIComponent(s))
+    .join("/");
+  const res = await fetch(
+    `${API_BASE}/api/backups/${encodeURIComponent(backupId)}/knowledge/${encodeURIComponent(topicId)}/artifacts/${encodedPath}`,
+  );
+  if (!res.ok) throw new Error("Failed to load artifact");
+  return res.text();
+}
+
+// ─── Backup Directory Config ────────────────────────────────────────────────
+
+export async function fetchBackupConfig(): Promise<{ directory: string }> {
+  const res = await fetch(`${API_BASE}/api/backups/config`);
+  if (!res.ok) throw new Error("Failed to fetch backup config");
+  return res.json();
+}
+
+export async function setBackupDir(directory: string): Promise<{ directory: string }> {
+  const res = await fetch(`${API_BASE}/api/backups/config`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ directory }),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({ error: "Unknown error" }))) as {
+      error?: string;
+    };
+    throw new Error(err.error ?? "Failed to set backup directory");
+  }
+  return res.json();
+}
