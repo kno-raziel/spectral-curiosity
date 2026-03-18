@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portability</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #000;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .card {
+      width: 600px;
+      aspect-ratio: 1 / 1;
+      background: #000;
+      border: 2px solid #1a1a1a;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 56px;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #dc2626 0%, transparent 60%);
+    }
+
+    .card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(270deg, #dc2626 0%, transparent 60%);
+    }
+
+    .top-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: 6px;
+      color: #dc2626;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .headline {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 38px;
+      line-height: 1;
+      letter-spacing: 2px;
+      color: #fff;
+      margin-bottom: 36px;
+    }
+
+    .export-list {
+      list-style: none;
+      margin-bottom: 32px;
+    }
+
+    .export-list li {
+      font-size: 15px;
+      font-weight: 500;
+      padding: 10px 0;
+      border-bottom: 1px solid #141414;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .export-list li:last-child { border-bottom: none; }
+
+    .icon-yes {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      background: rgba(220, 38, 38, 0.1);
+      border: 1px solid rgba(220, 38, 38, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #dc2626;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .exportable { color: #a3a3a3; }
+
+    .not-exportable {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .icon-no {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      background: rgba(220, 38, 38, 0.15);
+      border: 1px solid rgba(220, 38, 38, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #dc2626;
+      font-size: 15px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .separator {
+      height: 1px;
+      background: linear-gradient(90deg, #dc2626, transparent);
+      margin: 4px 0 12px;
+      width: 60%;
+    }
+
+    .bottom-text {
+      font-size: 14px;
+      color: #525252;
+      line-height: 1.6;
+    }
+
+    .bottom-text strong {
+      color: #dc2626;
+      font-weight: 700;
+    }
+
+    .corner { position: absolute; width: 20px; height: 20px; }
+    .corner-tl { top: 16px; left: 16px; border-top: 2px solid #dc2626; border-left: 2px solid #dc2626; }
+    .corner-br { bottom: 16px; right: 16px; border-bottom: 2px solid #dc2626; border-right: 2px solid #dc2626; }
+
+    .side-text {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%) rotate(90deg);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: #262626;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-br"></div>
+    <div class="side-text">DATA PORTABILITY</div>
+
+    <div class="top-label">You can export</div>
+
+    <div class="headline">YOUR EMAILS. YOUR DOCS.<br>YOUR PHOTOS. YOUR PASSWORDS.</div>
+
+    <ul class="export-list">
+      <li><span class="icon-yes">✓</span> <span class="exportable">Emails</span></li>
+      <li><span class="icon-yes">✓</span> <span class="exportable">Documents</span></li>
+      <li><span class="icon-yes">✓</span> <span class="exportable">Photos</span></li>
+      <li><span class="icon-yes">✓</span> <span class="exportable">Browser bookmarks</span></li>
+      <li><span class="icon-yes">✓</span> <span class="exportable">Password vaults</span></li>
+      <li>
+        <span class="icon-no">✗</span>
+        <span class="not-exportable">AI coding conversations</span>
+      </li>
+    </ul>
+
+    <div class="separator"></div>
+
+    <div class="bottom-text">
+      No export button. No API. <strong>No official way to take your data with you.</strong><br>
+      The more you use it, the harder it is to leave.
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Where Do Your Conversations Go?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #0a0e1a;
+      color: #e2e8f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .infographic {
+      width: 900px;
+      background: linear-gradient(180deg, #0f1629 0%, #111827 100%);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03), 0 25px 80px rgba(0, 0, 0, 0.6);
+    }
+
+    .header {
+      text-align: center;
+      padding: 48px 40px 32px;
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, transparent 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .header h1 {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header .subtitle {
+      font-size: 16px;
+      font-weight: 500;
+      color: #ef4444;
+      margin-top: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+    }
+
+    .column { padding: 36px 32px; }
+
+    .column-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .column-left .column-title { color: #ef4444; }
+    .column-right .column-title { color: #64748b; }
+
+    .column-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.3;
+    }
+
+    .item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .item:last-child { margin-bottom: 0; }
+
+    .item-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .column-left .item-icon {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .column-right .item-icon {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.15);
+    }
+
+    .item-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 2px;
+    }
+
+    .column-right .item-text strong { color: #94a3b8; }
+
+    .item-text span {
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    .check { color: #ef4444; }
+    .cross { color: #ef4444; font-weight: 800; font-size: 16px; }
+
+    .divider {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 36px 16px;
+      position: relative;
+    }
+
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 1px;
+      background: linear-gradient(180deg, transparent, rgba(239, 68, 68, 0.3), transparent);
+    }
+
+    .arrow-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .arrow-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #ef4444;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      padding: 12px 0;
+    }
+
+    .arrow-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ef4444;
+      font-size: 16px;
+    }
+
+    .cloud-label, .local-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .cloud-label {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .local-label {
+      background: rgba(100, 116, 139, 0.1);
+      color: #64748b;
+      border: 1px solid rgba(100, 116, 139, 0.15);
+    }
+
+    .warning-box {
+      margin: 0 32px 32px;
+      padding: 24px 28px;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.06), rgba(245, 158, 11, 0.04));
+      border: 1px solid rgba(239, 68, 68, 0.15);
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .warning-box::before {
+      content: '⚠';
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 48px;
+      opacity: 0.08;
+    }
+
+    .warning-box h3 {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #f59e0b;
+      margin-bottom: 8px;
+    }
+
+    .warning-box p {
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.6;
+      max-width: 90%;
+    }
+
+    .warning-box strong { color: #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="infographic">
+    <div class="header">
+      <h1>Where Do Your Conversations Go?</h1>
+      <div class="subtitle">The Antigravity Data Sovereignty Problem</div>
+    </div>
+
+    <div class="columns">
+      <div class="column column-left">
+        <div class="column-title">What Google Gets</div>
+        <div class="item">
+          <div class="item-icon">💬</div>
+          <div class="item-text">
+            <strong>Your full conversation history <span class="check">✓</span></strong>
+            <span>Every prompt, every response, every tool call — stored on Google's servers</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon">📂</div>
+          <div class="item-text">
+            <strong>Your entire codebase <span class="check">✓</span></strong>
+            <span>Sent as context with every request to the Language Server</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon">⌨️</div>
+          <div class="item-text">
+            <strong>Every command you execute <span class="check">✓</span></strong>
+            <span>Terminal commands, inputs, outputs — all captured</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon">📝</div>
+          <div class="item-text">
+            <strong>Every file you edit <span class="check">✓</span></strong>
+            <span>Full diffs, tool call results, file content snapshots</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon">🔗</div>
+          <div class="item-text">
+            <strong>Project metadata & workspaces <span class="check">✓</span></strong>
+            <span>Repository names, branch info, directory structures</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider">
+        <div class="arrow-container">
+          <div class="cloud-label">Google's<br>Cloud</div>
+          <div class="arrow-icon">↑</div>
+          <div class="arrow-label">One-way street</div>
+          <div class="arrow-icon">↑</div>
+          <div class="local-label">Your<br>Machine</div>
+        </div>
+      </div>
+
+      <div class="column column-right">
+        <div class="column-title">What You Get</div>
+        <div class="item">
+          <div class="item-icon"><span class="cross">✗</span></div>
+          <div class="item-text">
+            <strong>No cross-device sync</strong>
+            <span>Can't access your conversations from another machine</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon"><span class="cross">✗</span></div>
+          <div class="item-text">
+            <strong>No search across conversations</strong>
+            <span>Can't find that solution you wrote last week</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon"><span class="cross">✗</span></div>
+          <div class="item-text">
+            <strong>No export API</strong>
+            <span>No official way to download your own data</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon"><span class="cross">✗</span></div>
+          <div class="item-text">
+            <strong>No official data access</strong>
+            <span>RPC methods discovered by reverse-engineering the LS binary</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon"><span class="cross">✗</span></div>
+          <div class="item-text">
+            <strong>Uninstall = data loss</strong>
+            <span>Your conversations vanish when the IDE is removed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="warning-box">
+      <h3>The Worst of Both Worlds</h3>
+      <p>Cloud-only storage <strong>without cloud benefits</strong>. Your data is centralized but not portable, synced to Google but not to you. Conversations may be cached locally by the Chromium runtime, but with no guarantees of persistence, no export mechanism, and no portability across devices.</p>
+    </div>
+  </div>
+</body>
+</html>

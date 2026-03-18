@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Switching Cost</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #000;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .card {
+      width: 600px;
+      aspect-ratio: 1 / 1;
+      background: #000;
+      border: 2px solid #1a1a1a;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 56px;
+    }
+
+    /* JJK-style diagonal blood splatter line */
+    .slash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .slash::before {
+      content: '';
+      position: absolute;
+      top: -10%;
+      left: 55%;
+      width: 3px;
+      height: 120%;
+      background: linear-gradient(180deg, transparent, #dc2626 30%, #dc2626 70%, transparent);
+      transform: rotate(15deg);
+      opacity: 0.15;
+    }
+
+    .question {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px;
+      letter-spacing: 5px;
+      color: #dc2626;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .headline {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 46px;
+      line-height: 0.95;
+      letter-spacing: 2px;
+      color: #fff;
+      margin-bottom: 36px;
+    }
+
+    .headline em {
+      font-style: normal;
+      color: #dc2626;
+    }
+
+    .loss-items {
+      margin-bottom: 32px;
+    }
+
+    .loss-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 9px 0;
+    }
+
+    .loss-dash {
+      width: 20px;
+      height: 2px;
+      background: #dc2626;
+      flex-shrink: 0;
+    }
+
+    .loss-text {
+      font-size: 15px;
+      color: #737373;
+      font-weight: 500;
+    }
+
+    .questions-block {
+      padding: 20px 0;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+      margin-bottom: 28px;
+    }
+
+    .q-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+    }
+
+    .q-text {
+      font-size: 14px;
+      color: #525252;
+    }
+
+    .q-answer {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 3px;
+      color: #dc2626;
+    }
+
+    .verdict {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    .verdict em {
+      font-style: normal;
+      color: #dc2626;
+    }
+
+    .corner { position: absolute; width: 20px; height: 20px; }
+    .corner-tl { top: 16px; left: 16px; border-top: 2px solid #dc2626; border-left: 2px solid #dc2626; }
+    .corner-br { bottom: 16px; right: 16px; border-bottom: 2px solid #dc2626; border-right: 2px solid #dc2626; }
+
+    .side-text {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%) rotate(90deg);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: #262626;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-br"></div>
+    <div class="slash"></div>
+    <div class="side-text">SWITCHING COST</div>
+
+    <div class="question">Ask yourself</div>
+
+    <div class="headline">
+      HOW MUCH WOULD IT<br>
+      COST YOU TO <em>LOSE</em><br>
+      EVERY AI CONVERSATION<br>
+      YOU'VE EVER HAD?
+    </div>
+
+    <div class="loss-items">
+      <div class="loss-item">
+        <div class="loss-dash"></div>
+        <div class="loss-text">Every debugging session</div>
+      </div>
+      <div class="loss-item">
+        <div class="loss-dash"></div>
+        <div class="loss-text">Every architecture discussion</div>
+      </div>
+      <div class="loss-item">
+        <div class="loss-dash"></div>
+        <div class="loss-text">Every solution you spent hours refining</div>
+      </div>
+    </div>
+
+    <div class="questions-block">
+      <div class="q-row">
+        <span class="q-text">Can you export them?</span>
+        <span class="q-answer">NO.</span>
+      </div>
+      <div class="q-row">
+        <span class="q-text">Can you move them to another tool?</span>
+        <span class="q-answer">NO.</span>
+      </div>
+      <div class="q-row">
+        <span class="q-text">Can you even search them?</span>
+        <span class="q-answer">NO.</span>
+      </div>
+    </div>
+
+    <div class="verdict">The switching cost <em>is</em> the product.</div>
+  </div>
+</body>
+</html>
