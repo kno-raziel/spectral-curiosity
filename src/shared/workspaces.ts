@@ -2,6 +2,9 @@
  * Workspace management — load, save, and auto-detect workspaces.
  *
  * Uses node:fs/promises for file I/O (works on both Bun and Node).
+ * Auto-detection merges two DB sources:
+ *   - sidebarWorkspaces (protobuf) — workspaces with conversations
+ *   - content.trust.model.key (JSON) — all trusted workspace folders
  */
 
 import { readFile, writeFile } from "node:fs/promises";
@@ -29,10 +32,32 @@ export async function saveWorkspaces(workspaces: WorkspaceEntry[]): Promise<void
 }
 
 /**
- * Auto-detect workspaces by parsing the protobuf-encoded
- * sidebar workspace list from the Antigravity state DB.
+ * Auto-detect workspaces by merging sidebar workspaces (protobuf)
+ * with trusted folders (JSON). Sidebar entries take priority since
+ * they may carry richer metadata.
  */
 function detectWorkspacesFromDb(): WorkspaceEntry[] {
+  const sidebarEntries = parseSidebarWorkspaces();
+  const trustedEntries = parseTrustedFolders();
+
+  // Index sidebar entries by URI for dedup
+  const seen = new Set(sidebarEntries.map((w) => w.uri));
+
+  // Append trusted folders not already in sidebar
+  for (const entry of trustedEntries) {
+    if (!seen.has(entry.uri)) {
+      sidebarEntries.push(entry);
+      seen.add(entry.uri);
+    }
+  }
+
+  return sidebarEntries;
+}
+
+// ─── Sidebar workspaces (protobuf) ──────────────────────────────────────────
+
+/** Parse the protobuf-encoded sidebar workspace list. */
+function parseSidebarWorkspaces(): WorkspaceEntry[] {
   const raw = readDbValue(DB_KEYS.sidebarWorkspaces);
   if (!raw) return [];
 
@@ -64,6 +89,47 @@ function detectWorkspacesFromDb(): WorkspaceEntry[] {
 
   return workspaces;
 }
+
+// ─── Trusted folders (JSON, VS Code standard) ──────────────────────────────
+
+/** Shape of a single entry in `content.trust.model.key`. */
+interface TrustUriInfo {
+  uri: {
+    external?: string;
+    path?: string;
+  };
+  trusted: boolean;
+}
+
+/** Parse the VS Code trusted folders list from JSON. */
+function parseTrustedFolders(): WorkspaceEntry[] {
+  const raw = readDbValue(DB_KEYS.trustedFolders);
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw) as { uriTrustInfo?: TrustUriInfo[] };
+    if (!Array.isArray(parsed.uriTrustInfo)) return [];
+
+    const entries: WorkspaceEntry[] = [];
+    for (const info of parsed.uriTrustInfo) {
+      if (!info.trusted) continue;
+      const uri = info.uri.external || (info.uri.path ? `file://${info.uri.path}` : "");
+      if (!uri) continue;
+      entries.push({
+        name: uri.split("/").pop() || uri,
+        uri,
+        gitSlug: "",
+        gitRemote: "",
+        branch: "",
+      });
+    }
+    return entries;
+  } catch {
+    return [];
+  }
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 /** Extract the URI (field 1) from a single workspace protobuf entry. */
 function parseEntryUri(entry: Uint8Array): string | null {

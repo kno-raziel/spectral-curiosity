@@ -19,6 +19,7 @@ export interface DbAdapter {
 export const DB_KEYS = {
   trajectorySummaries: "antigravityUnifiedStateSync.trajectorySummaries",
   sidebarWorkspaces: "antigravityUnifiedStateSync.sidebarWorkspaces",
+  trustedFolders: "content.trust.model.key",
 } as const;
 
 interface ItemRow {
