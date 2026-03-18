@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 
 import { SpectralPanel } from "./SpectralPanel";
 import { BackupEngine } from "./sdk/backup-engine";
+import { estimateBackupSize, formatBytes } from "./sdk/backup-estimator";
 import { BackupScheduler, type BackupSchedulerState } from "./sdk/backup-scheduler";
 import { SdkManager } from "./sdk/sdk-manager";
 
@@ -141,7 +142,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // ── Status Bar ─────────────────────────────────────────────────────
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 50);
-  statusBarItem.command = "spectral.backupNow";
+  statusBarItem.command = "spectral.configureBackup";
   updateStatusBar(statusBarItem, scheduler.state);
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
@@ -150,6 +151,78 @@ export function activate(context: vscode.ExtensionContext) {
     updateStatusBar(statusBarItem, state);
   });
   context.subscriptions.push(stateWatcher);
+
+  // ── Configure Backup Command (QuickPick + Size Estimates) ──────────
+  const configureBackupCommand = vscode.commands.registerCommand(
+    "spectral.configureBackup",
+    async () => {
+      const config = vscode.workspace.getConfiguration("spectral.backup");
+
+      // Compute estimates
+      const estimate = estimateBackupSize();
+
+      // Build QuickPick items
+      const items: (vscode.QuickPickItem & { settingKey?: string })[] = estimate.categories.map(
+        (cat) => {
+          const size = formatBytes(cat.sizeBytes);
+          const countLabel = cat.count !== undefined ? ` (${cat.count})` : "";
+          const isConversations = cat.settingKey === "_conversations";
+
+          return {
+            label: `${cat.emoji} ${cat.label}${countLabel}`,
+            description: size,
+            picked: isConversations ? true : (config.get<boolean>(cat.settingKey) ?? true),
+            settingKey: isConversations ? undefined : cat.settingKey,
+          };
+        },
+      );
+
+      const quickPick = vscode.window.createQuickPick<
+        vscode.QuickPickItem & { settingKey?: string }
+      >();
+      quickPick.title = `📦 Backup Configuration — Estimated total: ${formatBytes(estimate.totalBytes)}`;
+      quickPick.placeholder = "Select categories → Enter → Confirm backup";
+      quickPick.canSelectMany = true;
+      quickPick.items = items;
+      quickPick.selectedItems = items.filter((i) => i.picked);
+
+      quickPick.onDidAccept(async () => {
+        const selected = quickPick.selectedItems;
+        quickPick.hide();
+
+        // Persist selections to settings
+        for (const item of items) {
+          if (item.settingKey) {
+            const isSelected = selected.some((s) => s.label === item.label);
+            await config.update(item.settingKey, isSelected, vscode.ConfigurationTarget.Global);
+          }
+        }
+
+        // Compute selected total for confirmation
+        const selectedTotal = estimate.categories
+          .filter((cat) => {
+            if (cat.settingKey === "_conversations") return true;
+            return selected.some((s) => s.label.includes(cat.label));
+          })
+          .reduce((sum, c) => sum + c.sizeBytes, 0);
+
+        // 2-step confirmation
+        const choice = await vscode.window.showInformationMessage(
+          `Start backup? Estimated size: ~${formatBytes(selectedTotal)}`,
+          { modal: false },
+          "Start Backup",
+        );
+
+        if (choice === "Start Backup") {
+          await vscode.commands.executeCommand("spectral.backupNow");
+        }
+      });
+
+      quickPick.onDidHide(() => quickPick.dispose());
+      quickPick.show();
+    },
+  );
+  context.subscriptions.push(configureBackupCommand);
 
   // ── SDK Spike Command ──────────────────────────────────────────────
   const spikeCommand = vscode.commands.registerCommand("spectral.sdkSpike", async () => {
@@ -308,23 +381,32 @@ function updateStatusBar(item: vscode.StatusBarItem, state: BackupSchedulerState
     return;
   }
 
+  // Compute estimated size for status bar
+  let sizeLabel = "";
+  try {
+    const estimate = estimateBackupSize();
+    sizeLabel = ` ~${formatBytes(estimate.totalBytes)}`;
+  } catch {
+    // Ignore estimation errors
+  }
+
   if (state.lastBackupAt) {
     const time = new Date(state.lastBackupAt).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
-    item.text = `$(cloud-upload) ${time}`;
-    item.tooltip = `Spectral: Last backup at ${time}\n${state.lastBackupSummary ?? ""}\nClick to run backup now`;
+    item.text = `$(cloud-upload) ${time}${sizeLabel}`;
+    item.tooltip = `Spectral: Last backup at ${time}\n${state.lastBackupSummary ?? ""}\nEstimated source size:${sizeLabel}\nClick to configure & backup`;
     return;
   }
 
   if (state.running) {
-    item.text = "$(cloud-upload) Auto";
-    item.tooltip = "Spectral: Auto-backup enabled\nClick to run backup now";
+    item.text = `$(cloud-upload) Auto${sizeLabel}`;
+    item.tooltip = `Spectral: Auto-backup enabled\nEstimated source size:${sizeLabel}\nClick to configure & backup`;
     return;
   }
 
   // Scheduler not running, no backup history
-  item.text = "$(cloud-upload) Backup";
-  item.tooltip = "Spectral: Click to run backup now";
+  item.text = `$(cloud-upload) Backup${sizeLabel}`;
+  item.tooltip = `Spectral: Estimated source size:${sizeLabel}\nClick to configure & backup`;
 }

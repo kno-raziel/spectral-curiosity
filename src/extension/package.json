@@ -46,6 +46,10 @@
         "title": "Spectral: Backup Now"
       },
       {
+        "command": "spectral.configureBackup",
+        "title": "Spectral: Configure & Backup"
+      },
+      {
         "command": "spectral.openBackupFolder",
         "title": "Spectral: Open Backup Folder"
       }

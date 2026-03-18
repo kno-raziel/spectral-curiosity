@@ -8,16 +8,23 @@ Webview-based extension that provides the same React UI inside the editor.
 - 🔍 Search & filter conversations by title, artifacts, workspace, or status
 - 🔄 Reassign conversations to different workspaces
 - 📝 View AI artifacts — summaries, content previews, and metadata
-- 💾 Save changes with automatic backups
+- 💾 Backup conversations, brain, knowledge, and skills
 - 📊 Diff backup snapshots to track changes over time
 
 ## Architecture
 
 ```
-extension.ts          # activate/deactivate — registers command
-  └── SpectralPanel.ts  # Creates webview, injects HTML + CSS + JS
-        └── messageHandler.ts  # Routes postMessage requests to shared/ modules
-              └── adapter.ts   # DbAdapter impl using better-sqlite3
+extension.ts            # activate/deactivate — registers commands
+  ├── SpectralPanel.ts   # Creates webview, injects HTML + CSS + JS
+  │     └── messageHandler.ts  # Routes postMessage to shared/ modules
+  │           └── adapter.ts   # DbAdapter impl using sqlite-loader
+  └── sdk/
+        ├── sqlite-loader.ts   # ⚠️ ALL sqlite access goes through here
+        ├── backup-engine.ts   # Orchestrates full/incremental backups
+        ├── backup-estimator.ts # Estimates backup size per category
+        ├── backup-scheduler.ts # Auto-backup interval management
+        ├── sdk-manager.ts     # Manages Antigravity SDK lifecycle
+        └── ls-client.ts       # Language Server RPC client
 ```
 
 The extension reuses the **same React SPA** from `src/client/` — the client's `api.ts` detects the webview environment and switches from HTTP fetch to `postMessage` transport automatically.
@@ -25,29 +32,26 @@ The extension reuses the **same React SPA** from `src/client/` — the client's 
 ## Build
 
 ```bash
-# Install deps + rebuild native module + bundle
-bun run build:ext
-
-# Package as .vsix
-bun run package:ext
-
-# Watch mode for development
-bun run watch:ext
+npm run build      # Bundle with esbuild
+npm run watch      # Watch mode for development
+npm run typecheck   # tsc --noEmit
 ```
 
-The build uses `esbuild.mjs` which bundles:
-- Extension host: `extension.ts` + `SpectralPanel.ts` + `messageHandler.ts` + `adapter.ts` + `shared/`
-- Webview: `client/main.tsx` + all client components
-- CSS: Compiled Tailwind output
+## Packaging
 
-## Native Module
+```bash
+# Package as .vsix (MUST include node_modules/)
+npx @vscode/vsce package
 
-Uses `better-sqlite3` with `electron-rebuild` to match the VS Code Electron version.
-
-## Usage
-
-Open the command palette (`Cmd+Shift+P`) and run:
-
+# Install in Antigravity
+antigravity --install-extension spectral-extension-0.1.0.vsix
 ```
-Spectral: Open Workspace Manager
-```
+
+> **⚠️ Never use `--no-dependencies`** — the VSIX must include `node_modules/node-sqlite3-wasm/` and `node_modules/antigravity-sdk/`.
+
+## SQLite Access
+
+Uses `node-sqlite3-wasm` (WebAssembly port — no native bindings, no electron-rebuild).
+
+**All access goes through `sdk/sqlite-loader.ts`** — never import `node-sqlite3-wasm` directly. The loader uses lazy `require()` with try/catch so the extension always activates, even if the WASM module is unavailable.
+
