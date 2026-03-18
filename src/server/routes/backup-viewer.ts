@@ -13,12 +13,16 @@ import type { BackupReader } from "../../shared/backup-reader";
  * Returns a Response if the URL matches a backup route, or null to pass through.
  *
  * Routes:
- *   GET /api/backups                              → List backups
- *   GET /api/backups/:id                          → Get manifest
- *   GET /api/backups/:id/conversations            → List conversations
- *   GET /api/backups/:id/conversations/:convId    → Full trajectory
- *   GET /api/backups/:id/conversations/:convId/markdown → Markdown export
- *   GET /api/backups/:id/search?q=term            → Full-text search
+ *   GET /api/backups                                         → List backups
+ *   GET /api/backups/:id                                     → Get manifest
+ *   GET /api/backups/:id/conversations                       → List conversations
+ *   GET /api/backups/:id/conversations/:convId               → Full trajectory
+ *   GET /api/backups/:id/conversations/:convId/markdown      → Markdown export
+ *   GET /api/backups/:id/search?q=term                       → Full-text search
+ *   GET /api/backups/:id/brain/:convId/tree                  → Brain file tree
+ *   GET /api/backups/:id/brain/:convId/file?path=...         → Serve brain file
+ *   GET /api/backups/:id/knowledge                           → Knowledge topics list
+ *   GET /api/backups/:id/knowledge/:topicId/artifacts/:file  → Knowledge artifact
  */
 export async function handleBackupRoute(
   req: Request,
@@ -65,6 +69,8 @@ export async function handleBackupRoute(
       return Response.json(results);
     }
 
+    // ── Conversations ──────────────────────────────────────────────────
+
     // GET /api/backups/:id/conversations
     if (segments[1] === "conversations" && segments.length === 2) {
       const conversations = await reader.listConversations(backupId);
@@ -83,6 +89,49 @@ export async function handleBackupRoute(
       const convId = decodeURIComponent(segments[2]);
       const md = await reader.getMarkdown(backupId, convId);
       return new Response(md, {
+        headers: { "Content-Type": "text/markdown; charset=utf-8" },
+      });
+    }
+
+    // ── Brain Explorer ──────────────────────────────────────────────────
+
+    // GET /api/backups/:id/brain/:convId/tree
+    if (segments[1] === "brain" && segments.length === 4 && segments[3] === "tree") {
+      const convId = decodeURIComponent(segments[2]);
+      const tree = await reader.getBrainTree(backupId, convId);
+      return Response.json(tree);
+    }
+
+    // GET /api/backups/:id/brain/:convId/file?path=relative/path.png
+    if (segments[1] === "brain" && segments.length === 4 && segments[3] === "file") {
+      const convId = decodeURIComponent(segments[2]);
+      const filePath = url.searchParams.get("path") ?? "";
+      if (!filePath) {
+        return Response.json({ error: "Missing ?path= parameter" }, { status: 400 });
+      }
+      const result = await reader.readBrainFile(backupId, convId, filePath);
+      return new Response(Bun.file(result.path), {
+        headers: {
+          "Content-Type": result.mimeType,
+          "Cache-Control": "public, max-age=86400",
+        },
+      });
+    }
+
+    // ── Knowledge Base ──────────────────────────────────────────────────
+
+    // GET /api/backups/:id/knowledge
+    if (segments[1] === "knowledge" && segments.length === 2) {
+      const topics = await reader.getKnowledgeTopics(backupId);
+      return Response.json(topics);
+    }
+
+    // GET /api/backups/:id/knowledge/:topicId/artifacts/...nested/file.md
+    if (segments[1] === "knowledge" && segments.length >= 5 && segments[3] === "artifacts") {
+      const topicId = decodeURIComponent(segments[2]);
+      const nestedPath = segments.slice(4).map(decodeURIComponent).join("/");
+      const content = await reader.readKnowledgeArtifact(backupId, topicId, nestedPath);
+      return new Response(content, {
         headers: { "Content-Type": "text/markdown; charset=utf-8" },
       });
     }

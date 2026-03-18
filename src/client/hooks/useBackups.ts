@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ConversationBackupMeta } from "../../shared/backup-format";
+import type { FileTreeNode, KnowledgeTopic } from "../../shared/backup-reader";
 import type { BackupSummary, SearchResult } from "../../shared/backup-reader-types";
 import type { FullTrajectory } from "../../shared/trajectory-types";
 import {
@@ -11,6 +12,8 @@ import {
   fetchBackupList,
   fetchBackupSearch,
   fetchBackupTrajectory,
+  fetchBrainTree,
+  fetchKnowledgeTopics,
 } from "../api";
 
 export function useBackupList() {
@@ -18,14 +21,20 @@ export function useBackupList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
+    setError(null);
     fetchBackupList()
       .then(setBackups)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : "Failed to load"))
       .finally(() => setLoading(false));
   }, []);
 
-  return { backups, loading, error };
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { backups, loading, error, reload: load };
 }
 
 export function useConversationList(backupId: string | null) {
@@ -92,4 +101,49 @@ export function useBackupSearch(backupId: string | null) {
   );
 
   return { results, loading, query, search };
+}
+
+export function useBrainTree(backupId: string | null, convId: string | null) {
+  const [tree, setTree] = useState<FileTreeNode[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!backupId || !convId) {
+      setTree([]);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    fetchBrainTree(backupId, convId)
+      .then(setTree)
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "Failed to load");
+        setTree([]);
+      })
+      .finally(() => setLoading(false));
+  }, [backupId, convId]);
+
+  return { tree, loading, error };
+}
+
+export function useKnowledgeTopics(backupId: string | null) {
+  const [topics, setTopics] = useState<KnowledgeTopic[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!backupId) {
+      setTopics([]);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    fetchKnowledgeTopics(backupId)
+      .then(setTopics)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Failed to load"))
+      .finally(() => setLoading(false));
+  }, [backupId]);
+
+  return { topics, loading, error };
 }

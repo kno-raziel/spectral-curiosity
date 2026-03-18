@@ -155,6 +155,112 @@ export class BackupReader {
     return results;
   }
 
+  // ── Brain Explorer ──────────────────────────────────────────────────────
+
+  /** Get the file tree for a conversation's brain folder */
+  async getBrainTree(backupId: string, convId: string): Promise<FileTreeNode[]> {
+    const brainDir = join(this.backupPath(backupId), "brain", convId);
+    return this.buildFileTree(brainDir, "");
+  }
+
+  /** Check if a conversation has a brain folder */
+  async hasBrain(backupId: string, convId: string): Promise<boolean> {
+    const brainDir = join(this.backupPath(backupId), "brain", convId);
+    try {
+      const s = await stat(brainDir);
+      return s.isDirectory();
+    } catch {
+      return false;
+    }
+  }
+
+  /** Read a file from a conversation's brain folder */
+  async readBrainFile(
+    backupId: string,
+    convId: string,
+    filePath: string,
+  ): Promise<BrainFileResult> {
+    // Sanitize: prevent path traversal
+    const safe = filePath.replace(/\.\./g, "");
+    const fullPath = join(this.backupPath(backupId), "brain", convId, safe);
+    const s = await stat(fullPath);
+    const ext = fullPath.split(".").pop()?.toLowerCase() ?? "";
+
+    const mimeMap: Record<string, string> = {
+      png: "image/png",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      webp: "image/webp",
+      gif: "image/gif",
+      svg: "image/svg+xml",
+      md: "text/markdown",
+      json: "application/json",
+      txt: "text/plain",
+    };
+
+    return {
+      path: fullPath,
+      size: s.size,
+      mimeType: mimeMap[ext] ?? "application/octet-stream",
+      isText: ["md", "json", "txt", "log"].includes(ext),
+    };
+  }
+
+  // ── Knowledge Base ──────────────────────────────────────────────────────
+
+  /** List all knowledge topics with their metadata and artifact tree */
+  async getKnowledgeTopics(backupId: string): Promise<KnowledgeTopic[]> {
+    const knowledgeDir = join(this.backupPath(backupId), "knowledge");
+    let entries: string[];
+    try {
+      entries = await readdir(knowledgeDir);
+    } catch {
+      return [];
+    }
+
+    const topics: KnowledgeTopic[] = [];
+
+    for (const name of entries) {
+      const topicDir = join(knowledgeDir, name);
+      const topicStat = await stat(topicDir).catch(() => null);
+      if (!topicStat?.isDirectory()) continue;
+
+      // Read metadata.json
+      const metadataPath = join(topicDir, "metadata.json");
+      try {
+        const raw = await readFile(metadataPath, "utf-8");
+        const meta = JSON.parse(raw) as KnowledgeMetadata;
+
+        // Build recursive file tree for artifacts
+        const artifactsDir = join(topicDir, "artifacts");
+        const artifactTree = await this.buildFileTree(artifactsDir, "");
+
+        topics.push({
+          id: name,
+          title: meta.title ?? name,
+          summary: meta.summary ?? "",
+          references: meta.references ?? [],
+          artifactTree,
+        });
+      } catch {
+        // No valid metadata — skip
+      }
+    }
+
+    return topics.sort((a, b) => a.title.localeCompare(b.title));
+  }
+
+  /** Read a knowledge artifact file (supports nested paths like case_studies/file.md) */
+  async readKnowledgeArtifact(
+    backupId: string,
+    topicId: string,
+    filename: string,
+  ): Promise<string> {
+    const safe = filename.replace(/\.\./g, "");
+    const filePath = join(this.backupPath(backupId), "knowledge", topicId, "artifacts", safe);
+    return readFile(filePath, "utf-8");
+  }
+
   // ── Private helpers ─────────────────────────────────────────────────────
 
   private backupPath(backupId: string): string {
@@ -168,4 +274,74 @@ export class BackupReader {
   private conversationPath(backupId: string, convId: string): string {
     return join(this.backupPath(backupId), "conversations", convId);
   }
+
+  /** Recursively build a file tree for a directory */
+  private async buildFileTree(dirPath: string, relativePath: string): Promise<FileTreeNode[]> {
+    let entries: string[];
+    try {
+      entries = await readdir(dirPath);
+    } catch {
+      return [];
+    }
+
+    const nodes: FileTreeNode[] = [];
+
+    for (const name of entries.sort()) {
+      // Skip hidden files and .DS_Store
+      if (name.startsWith(".")) continue;
+
+      const fullPath = join(dirPath, name);
+      const relPath = relativePath ? `${relativePath}/${name}` : name;
+      const s = await stat(fullPath).catch(() => null);
+      if (!s) continue;
+
+      if (s.isDirectory()) {
+        const children = await this.buildFileTree(fullPath, relPath);
+        nodes.push({ name, path: relPath, type: "directory", children });
+      } else {
+        const ext = name.split(".").pop()?.toLowerCase() ?? "";
+        nodes.push({
+          name,
+          path: relPath,
+          type: "file",
+          size: s.size,
+          ext,
+        });
+      }
+    }
+
+    return nodes;
+  }
+}
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+export interface FileTreeNode {
+  name: string;
+  path: string;
+  type: "file" | "directory";
+  size?: number;
+  ext?: string;
+  children?: FileTreeNode[];
+}
+
+export interface BrainFileResult {
+  path: string;
+  size: number;
+  mimeType: string;
+  isText: boolean;
+}
+
+export interface KnowledgeMetadata {
+  title?: string;
+  summary?: string;
+  references?: Array<{ type: string; value: string }>;
+}
+
+export interface KnowledgeTopic {
+  id: string;
+  title: string;
+  summary: string;
+  references: Array<{ type: string; value: string }>;
+  artifactTree: FileTreeNode[];
 }

@@ -3,11 +3,16 @@
  *
  * Mirrors the step type discriminator from markdown-export.ts but
  * renders React components instead of Markdown strings.
+ *
+ * Includes a toggle to switch between the Timeline and Brain Explorer views.
  */
 
 import { useState } from "react";
 import type { TrajectoryStep } from "../../../shared/trajectory-types";
 import { useTrajectory } from "../../hooks/useBackups";
+import { BrainExplorer } from "./BrainExplorer";
+
+type DetailView = "timeline" | "brain";
 
 interface ConversationDetailProps {
   backupId: string;
@@ -23,6 +28,7 @@ export function ConversationDetail({
   onBack,
 }: ConversationDetailProps) {
   const { trajectory, loading, error } = useTrajectory(backupId, conversationId);
+  const [view, setView] = useState<DetailView>("timeline");
 
   return (
     <div>
@@ -38,14 +44,34 @@ export function ConversationDetail({
       </div>
       <h2 className="text-[16px] font-semibold text-text-primary mb-1">{title}</h2>
       {trajectory && (
-        <p className="text-[11px] text-text-muted mb-4 font-mono">
+        <p className="text-[11px] text-text-muted mb-3 font-mono">
           {trajectory.trajectory.steps?.length ?? 0} steps ·{" "}
           {trajectory.trajectory.cascadeId.slice(0, 8)}
         </p>
       )}
 
+      {/* View Toggle */}
+      <div className="flex gap-1 mb-4 bg-bg-secondary rounded-lg p-1 w-fit border border-border">
+        {(["timeline", "brain"] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setView(v)}
+            className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-all cursor-pointer border-none font-sans ${
+              view === v
+                ? "bg-accent-blue text-white shadow-sm"
+                : "bg-transparent text-text-secondary hover:text-text-primary hover:bg-bg-tertiary"
+            }`}
+          >
+            {v === "timeline" ? "💬 Timeline" : "📂 Brain Explorer"}
+          </button>
+        ))}
+      </div>
+
       {/* Content */}
-      {loading ? (
+      {view === "brain" ? (
+        <BrainExplorer backupId={backupId} conversationId={conversationId} />
+      ) : loading ? (
         <div className="flex items-center justify-center py-16 text-text-secondary">
           <div className="w-6 h-6 rounded-full border-[3px] border-border border-t-accent-blue animate-[spin_0.8s_linear_infinite]" />
         </div>
