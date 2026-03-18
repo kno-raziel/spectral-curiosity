@@ -37,29 +37,8 @@ import type { LsClient } from "./ls-client";
 import type { CascadeEntry } from "./ls-types";
 import { renderTrajectoryMarkdown } from "./markdown-export";
 
-// node-sqlite3-wasm is handled by the `optionalExternals` esbuild plugin,
-// which wraps the require in try/catch at build time. The lazy loader here
-// is still needed because the module is loaded on-demand (not at activation).
-
-/** Minimal typed interface for the subset of node-sqlite3-wasm we use */
-interface SqliteDatabase {
-  get(sql: string, params?: unknown[]): Record<string, unknown> | null;
-  close(): void;
-}
-
-interface SqliteModule {
-  Database: new (path: string, opts?: { readOnly?: boolean }) => SqliteDatabase;
-}
-
-/** Lazy-load node-sqlite3-wasm. Returns null if unavailable. */
-function loadSqlite(): SqliteModule | null {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require("node-sqlite3-wasm") as SqliteModule;
-  } catch {
-    return null;
-  }
-}
+// SQLite access via centralized loader (lazy, resilient)
+import { loadSqliteModule } from "./sqlite-loader";
 
 /** Extension version — injected from package.json at build time */
 const TOOL_VERSION = "0.1.0";
@@ -126,7 +105,7 @@ export class BackupEngine {
 
     // -- Database fallback to bypass the 10-item listCascades limit --
     try {
-      const sqlite = loadSqlite();
+      const sqlite = loadSqliteModule();
       if (sqlite && existsSync(DB_PATH)) {
         const db = new sqlite.Database(DB_PATH, { readOnly: true });
         try {
