@@ -31,5 +31,5 @@ When creating or modifying components:
 
 - The app reads Antigravity's `state.vscdb` SQLite database
 - Protobuf encoding/decoding is handled in `src/shared/protobuf.ts`
-- The extension uses `better-sqlite3` (native Node module) with `electron-rebuild`
+- The extension uses `node-sqlite3-wasm` (WebAssembly — no native bindings, no electron-rebuild)
 - CSS uses Tailwind v4 `@theme` for design tokens — custom properties, not `tailwind.config`

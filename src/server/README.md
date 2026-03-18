@@ -11,20 +11,27 @@ The server package provides the full-stack Bun server with API routes and React 
 
 ## API Routes
 
-| Route                  | Method | Description                       |
-|------------------------|--------|-----------------------------------|
-| `/api/conversations`   | GET    | Load all conversations with metadata |
-| `/api/workspaces`      | GET    | List registered workspaces        |
-| `/api/save`            | POST   | Save assignment and rename changes |
-| `/api/paths`           | GET    | Return platform paths (DB, brain) |
-| `/api/backups`         | GET    | List backup snapshots             |
-| `/api/backups/diff`    | GET    | Diff two backup snapshots         |
+| Route                    | Method | Description                              |
+|--------------------------|--------|------------------------------------------|
+| `/api/conversations`     | GET    | Load all conversations with metadata     |
+| `/api/workspaces`        | GET    | List registered workspaces               |
+| `/api/save`              | POST   | Save assignment and rename changes       |
+| `/api/paths`             | GET    | Return platform paths (DB, brain)        |
+| `/api/snapshots`         | GET    | List backup snapshots                    |
+| `/api/snapshots/diff`    | GET    | Diff two backup snapshots                |
+| `/api/backups/config`    | GET/POST | Get or update backup directory config  |
+| `/api/backups`           | GET    | Backup viewer — list backups             |
+| `/api/backups/*`         | GET    | Backup viewer — dynamic path params      |
 
-## Adapter
+## Sub-modules
 
-`adapter.ts` implements the shared `DbAdapter` interface using `bun:sqlite`. Called via `initBunAdapters()` before any data access.
+| File                      | Purpose                                         |
+|---------------------------|--------------------------------------------------|
+| `adapter.ts`              | DbAdapter impl using `bun:sqlite`               |
+| `routes/backup-viewer.ts` | Backup viewer route handler for `/api/backups/*` |
 
 ## Static Assets
 
 - `/dist/app.css` — Compiled Tailwind CSS
 - `/src/shared/icon.svg` — App favicon
+

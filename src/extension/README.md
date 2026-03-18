@@ -23,8 +23,11 @@ extension.ts            # activate/deactivate — registers commands
         ├── backup-engine.ts   # Orchestrates full/incremental backups
         ├── backup-estimator.ts # Estimates backup size per category
         ├── backup-scheduler.ts # Auto-backup interval management
+        ├── connection.ts      # Connection management
+        ├── markdown-export.ts # Markdown export functionality
         ├── sdk-manager.ts     # Manages Antigravity SDK lifecycle
-        └── ls-client.ts       # Language Server RPC client
+        ├── ls-client.ts       # Language Server RPC client
+        └── ls-types.ts        # Language Server type definitions
 ```
 
 The extension reuses the **same React SPA** from `src/client/` — the client's `api.ts` detects the webview environment and switches from HTTP fetch to `postMessage` transport automatically.

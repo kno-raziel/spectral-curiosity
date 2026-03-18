@@ -23,7 +23,7 @@ Runs as a **Bun full-stack app** or as a **VS Code / Antigravity extension**.
 | Runtime  | [Bun](https://bun.sh) 1.3+  |
 | Frontend | React 19                     |
 | Backend  | `Bun.serve()` (routes API)   |
-| Database | `bun:sqlite` / `better-sqlite3` |
+| Database | `bun:sqlite` / `node-sqlite3-wasm` |
 | Linting  | Biome 2                      |
 | Types    | TypeScript 5.9 (strict)      |
 | HMR      | Built-in (Bun)               |
@@ -81,31 +81,48 @@ spectral-curiosity/
 │   │   ├── index.css      # Tailwind CSS v4 theme + keyframes
 │   │   ├── components/    # React components (co-located folders)
 │   │   │   ├── BackupPanel/
+│   │   │   ├── BackupViewer/
 │   │   │   ├── ConversationCard/
 │   │   │   ├── Header/       # Header + FilterBar
 │   │   │   └── Toast/
-│   │   └── hooks/         # Custom hooks
+│   │   └── hooks/         # Custom hooks (useConversations, useBackups)
 │   ├── shared/            # Shared data layer (platform-agnostic)
 │   │   ├── database.ts    # DbAdapter interface
 │   │   ├── types.ts       # Shared TypeScript types
 │   │   ├── assignments.ts # Workspace assignment logic
 │   │   ├── backups.ts     # Backup listing & diffs
+│   │   ├── backup-format.ts    # Backup format constants/parsers
+│   │   ├── backup-reader.ts    # Full backup reader implementation
+│   │   ├── backup-reader-types.ts # Backup reader type definitions
 │   │   ├── conversations.ts # Conversation loading
 │   │   ├── protobuf.ts    # Protobuf encoding/decoding
 │   │   ├── paths.ts       # Cross-platform path constants
 │   │   ├── trajectories.ts # Trajectory entry parsing
+│   │   ├── trajectory-types.ts # Extended trajectory types
 │   │   └── workspaces.ts  # Workspace management
 │   ├── server/            # Bun API server
 │   │   ├── index.ts       # Bun.serve() — API routes + React SPA
-│   │   └── adapter.ts     # DbAdapter impl (bun:sqlite)
+│   │   ├── adapter.ts     # DbAdapter impl (bun:sqlite)
+│   │   └── routes/
+│   │       └── backup-viewer.ts # Backup viewer route handler
 │   └── extension/         # VS Code / Antigravity extension
 │       ├── extension.ts   # Extension entry point
 │       ├── SpectralPanel.ts # Webview panel
 │       ├── messageHandler.ts # Webview ↔ host message router
-│       ├── adapter.ts     # DbAdapter impl (better-sqlite3)
+│       ├── adapter.ts     # DbAdapter impl (node-sqlite3-wasm)
 │       ├── esbuild.mjs    # Extension build config
 │       ├── package.json   # Extension manifest
-│       └── tsconfig.json  # Extension TypeScript config
+│       ├── tsconfig.json  # Extension TypeScript config
+│       └── sdk/           # Extension SDK modules
+│           ├── sqlite-loader.ts   # Centralized SQLite loader (⚠️)
+│           ├── backup-engine.ts   # Full/incremental backup orchestration
+│           ├── backup-estimator.ts # Backup size estimation
+│           ├── backup-scheduler.ts # Auto-backup intervals
+│           ├── connection.ts      # Connection management
+│           ├── markdown-export.ts # Markdown export
+│           ├── sdk-manager.ts     # Antigravity SDK lifecycle
+│           ├── ls-client.ts       # Language Server RPC client
+│           └── ls-types.ts        # Language Server types
 ├── index.html             # HTML entry (Bun HTML import)
 ├── biome.json             # Biome linter/formatter config
 ├── tsconfig.json          # Root TypeScript config
@@ -114,11 +131,11 @@ spectral-curiosity/
 
 ### Architecture
 
-The `src/shared/` module provides a **`DbAdapter` interface** that abstracts SQLite access. Both the Bun server (`bun:sqlite`) and the VS Code extension (`better-sqlite3`) inject their own implementation at startup. This eliminates code duplication while supporting both runtimes.
+The `src/shared/` module provides a **`DbAdapter` interface** that abstracts SQLite access. Both the Bun server (`bun:sqlite`) and the VS Code extension (`node-sqlite3-wasm`) inject their own implementation at startup. This eliminates code duplication while supporting both runtimes.
 
 ```
 client (React) ─── shared (data layer) ─┬─ server/adapter.ts  (bun:sqlite)
-                                         └─ extension/adapter.ts (better-sqlite3)
+                                         └─ extension/adapter.ts (node-sqlite3-wasm)
 ```
 
 ## How It Works

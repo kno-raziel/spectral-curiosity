@@ -17,6 +17,7 @@ Each component lives in its own folder with a barrel `index.ts`:
 ```
 components/
 ├── BackupPanel/       # Backup listing, snapshot diff viewer
+├── BackupViewer/      # Full backup viewer with tree navigation
 ├── ConversationCard/  # Expandable conversation row with rename, reassign
 ├── Header/            # Header bar + FilterBar (search, filter, bulk actions)
 └── Toast/             # Global toast notification system
@@ -27,6 +28,7 @@ components/
 | Hook                | Purpose                                   |
 |---------------------|-------------------------------------------|
 | `useConversations`  | Loads conversations + workspaces, manages pending changes, auto-refresh |
+| `useBackups`        | Manages backup listing, config, and snapshot navigation |
 
 ## Styling
 
