@@ -3,6 +3,26 @@
   "private": false,
   "version": "0.1.0",
   "description": "Backup, sync, and manage Antigravity conversations",
+  "author": "kno-raziel",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kno-raziel/spectral-curiosity"
+  },
+  "homepage": "https://github.com/kno-raziel/spectral-curiosity#readme",
+  "bugs": {
+    "url": "https://github.com/kno-raziel/spectral-curiosity/issues"
+  },
+  "keywords": [
+    "antigravity",
+    "ai-conversations",
+    "backup",
+    "data-portability",
+    "vscode-extension",
+    "bun",
+    "react",
+    "workspace-manager"
+  ],
   "type": "module",
   "scripts": {
     "dev": "bunx @tailwindcss/cli -i src/client/index.css -o dist/app.css && bun run src/server/index.ts",

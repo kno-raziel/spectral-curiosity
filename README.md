@@ -1,8 +1,25 @@
 # ⚡ Spectral Curiosity
 
-**Antigravity Workspace Manager** — A zero-dependency tool to explore, search, and manage your [Antigravity](https://antigravity.dev) AI conversation workspace associations.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
+[![Bun](https://img.shields.io/badge/Bun-1.3+-black)](https://bun.sh)
+
+**Your AI conversations are your data.** Spectral is a zero-dependency tool to backup, explore, search, and manage your [Antigravity](https://antigravity.dev) AI conversation workspace associations — so you can always access your context, no matter which tool you use tomorrow.
 
 Runs as a **Bun full-stack app** or as a **VS Code / Antigravity extension**.
+
+![Spectral — Workspace Manager](docs/assets/screenshot-workspaces.png)
+
+---
+
+## Why Spectral?
+
+If you use AI coding assistants, your conversation history is valuable context — architectural decisions, debugging sessions, domain knowledge. But that context can silently disconnect from your project, or become inaccessible if you switch tools.
+
+Spectral was born to solve two problems:
+
+1. **Conversations disconnect from projects** — Spectral detects orphaned conversations and lets you reassign them.
+2. **Data portability** — Spectral backs up your conversations to portable formats you can read without any specific AI tool installed.
 
 ---
 
@@ -146,11 +163,29 @@ client (React) ─── shared (data layer) ─┬─ server/adapter.ts  (bun:s
 4. Presents everything in a searchable, filterable React UI
 5. Allows reassigning conversations — writes modified protobuf back to the database
 
+### Backup Viewer
+
+Browse, search, and inspect your backed-up conversations — even on a machine without Antigravity installed.
+
+![Backup Viewer](docs/assets/screenshot-backup-viewer.png)
+
+### Knowledge Base Explorer
+
+Visualize the knowledge items Antigravity distills from your conversations.
+
+![Knowledge Base](docs/assets/screenshot-knowledge-base.png)
+
+### Workspace Details
+
+Expand any conversation to see its artifacts, metadata, and content previews.
+
+![Workspace Details](docs/assets/screenshot-workspace-details.png)
+
 ## Adding Workspaces
 
 Click **+ Workspace** in the filter bar and provide:
 - **Name** — Display name (e.g., `my-project`)
-- **URI** — Full path (e.g., `/Users/you/projects/my-project`)
+- **URI** — Full path (e.g., `~/projects/my-project`)
 
 Workspaces are saved to `~/.gemini/antigravity/spectral-workspaces.json`.
 

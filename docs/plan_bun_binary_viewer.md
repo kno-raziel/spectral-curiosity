@@ -30,17 +30,17 @@ Phase 1 exports conversations to a portable format (`manifest.json`, `trajectory
 
 Rename existing snapshot routes to free `/api/backups` for the viewer.
 
-#### [MODIFY] [index.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/server/index.ts)
+#### [MODIFY] [index.ts](file:///src/server/index.ts)
 
 - `/api/backups` → `/api/snapshots`
 - `/api/backups/diff` → `/api/snapshots/diff`
 
-#### [MODIFY] [api.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/client/api.ts)
+#### [MODIFY] [api.ts](file:///src/client/api.ts)
 
 - `fetchBackups()` → `fetchSnapshots()` — update URL to `/api/snapshots`
 - `fetchDiff()` → update URL to `/api/snapshots/diff`
 
-#### [MODIFY] [BackupPanel/](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/client/components/BackupPanel)
+#### [MODIFY] [BackupPanel/](file:///src/client/components/BackupPanel)
 
 - Update imports to use the renamed functions
 
@@ -50,7 +50,7 @@ Rename existing snapshot routes to free `/api/backups` for the viewer.
 
 The viewer UI needs to render trajectory steps on the client side. The step types currently live in `extension/sdk/ls-types.ts` (which is excluded from the main `tsconfig.json`). We'll extract the renderable types into `shared/`.
 
-#### [NEW] [trajectory-types.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/shared/trajectory-types.ts)
+#### [NEW] [trajectory-types.ts](file:///src/shared/trajectory-types.ts)
 
 Extract from `extension/sdk/ls-types.ts` into shared:
 
@@ -66,7 +66,7 @@ These types are **read-only** for the viewer (no write operations). The extensio
 
 ### Backup Reader (Shared Module)
 
-#### [NEW] [backup-reader.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/shared/backup-reader.ts)
+#### [NEW] [backup-reader.ts](file:///src/shared/backup-reader.ts)
 
 Platform-agnostic reader for Phase 1 backup directories:
 
@@ -101,7 +101,7 @@ class BackupReader {
 - Lazy: reads files on demand, no upfront load
 - Search scans `messages.md` (smaller than `trajectory.json`)
 
-#### [NEW] [backup-reader-types.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/shared/backup-reader-types.ts)
+#### [NEW] [backup-reader-types.ts](file:///src/shared/backup-reader-types.ts)
 
 ```typescript
 interface BackupSummary {
@@ -124,7 +124,7 @@ interface SearchResult {
 
 ### Backup Viewer API Routes
 
-#### [NEW] [backup-viewer.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/server/routes/backup-viewer.ts)
+#### [NEW] [backup-viewer.ts](file:///src/server/routes/backup-viewer.ts)
 
 | Method | Route | Returns |
 |--------|-------|---------|
@@ -137,7 +137,7 @@ interface SearchResult {
 
 Exports a `handleBackupRoute(req, reader): Response | null` since Bun.serve uses static route keys.
 
-#### [MODIFY] [index.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/server/index.ts)
+#### [MODIFY] [index.ts](file:///src/server/index.ts)
 
 - Instantiate `BackupReader` with configurable path (env var `SPECTRAL_BACKUP_DIR` or default `~/antigravity-backups`)
 - Add fallback handler before `/*` catch-all that delegates to `handleBackupRoute`
@@ -171,7 +171,7 @@ Design approach:
 - **Step type discriminator**: mirrors the `switch` in `markdown-export.ts` but renders React components
 - **Dark theme**: matches existing Spectral UI
 
-#### [NEW] [useBackups.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/client/hooks/useBackups.ts)
+#### [NEW] [useBackups.ts](file:///src/client/hooks/useBackups.ts)
 
 React hooks for backup data:
 
@@ -182,7 +182,7 @@ function useConversation(backupId, convId): { trajectory, loading, error };
 function useBackupSearch(backupId, query): { results, loading };
 ```
 
-#### [MODIFY] [api.ts](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/client/api.ts)
+#### [MODIFY] [api.ts](file:///src/client/api.ts)
 
 Add backup viewer fetch functions:
 - `fetchBackupList()` — `GET /api/backups`
@@ -190,7 +190,7 @@ Add backup viewer fetch functions:
 - `fetchBackupConversation(id, convId)` — `GET /api/backups/:id/conversations/:convId`
 - `fetchBackupSearch(id, query)` — `GET /api/backups/:id/search?q=`
 
-#### [MODIFY] [App.tsx](file:///Users/kno-raziel/Documents/Dev/node/spectral-curiosity/src/client/App.tsx)
+#### [MODIFY] [App.tsx](file:///src/client/App.tsx)
 
 - Add a tab/view toggle between "Workspace Manager" (current) and "Backup Viewer" (new)
 - Conditionally render `BackupViewer` or existing content based on active tab
