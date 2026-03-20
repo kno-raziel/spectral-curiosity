@@ -20,6 +20,10 @@ initBunAdapters();
 
 const PORT = 3000;
 
+// Detect compiled binary mode (injected via --define at build time)
+declare const IS_BUN_COMPILE: boolean;
+const isCompiled = typeof IS_BUN_COMPILE !== "undefined" && IS_BUN_COMPILE;
+
 // Initialize backup reader if a backup directory is configured
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -29,10 +33,7 @@ let backupReader = new BackupReader(currentBackupDir);
 
 Bun.serve({
   port: PORT,
-  development: {
-    hmr: true,
-    console: true,
-  },
+  development: isCompiled ? false : { hmr: true, console: true },
   routes: {
     // ── Static assets ────────────────────────────────
     "/dist/app.css": {

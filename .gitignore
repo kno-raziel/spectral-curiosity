@@ -45,3 +45,5 @@ src/extension/node_modules/
 .DS_Store
 *.DS_Store
 .scratch/
+*.bun-build
+dist/

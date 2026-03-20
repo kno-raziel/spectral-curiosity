@@ -28,6 +28,7 @@
     "dev": "bunx @tailwindcss/cli -i src/client/index.css -o dist/app.css && bun run src/server/index.ts",
     "build": "bunx @tailwindcss/cli -i src/client/index.css -o dist/app.css --minify && bun build ./index.html --production --outdir=dist",
     "build:ext": "cd src/extension && npm install && node esbuild.mjs",
+    "build:bin": "bun build --compile --minify --define 'IS_BUN_COMPILE=true' ./src/server/index.ts --outfile dist/spectral",
     "watch:ext": "cd src/extension && node esbuild.mjs --watch",
     "package:ext": "bun run build:ext && cd src/extension && npx @vscode/vsce package",
     "deploy:ext": "bun run package:ext && antigravity --install-extension src/extension/spectral-extension-0.1.0.vsix --force",
