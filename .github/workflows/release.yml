@@ -37,6 +37,7 @@ jobs:
           bun-version: latest
 
       - run: bun install
+      - run: bun run build
 
       - name: Build standalone binary
         run: |
