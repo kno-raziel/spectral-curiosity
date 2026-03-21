@@ -163,6 +163,17 @@ Each step in the `steps[]` array contains:
 | `GetModelResponse` | ❌ 500 | Entity not found |
 | *`trajectoryId`-based calls* | ❌ 404/500 | Only `cascadeId` works consistently |
 
+### Confirmed Limitation: No Rename / UpdateSummary RPC
+
+After extensive probing and reverse-engineering of the LS binary (`language_server_macos_arm`):
+
+- **No RPC endpoint exists** to modify the conversation summary (title) from the client.
+- `UpdateSummaryForID` is an internal Go method on the `cortex.CascadeManager` struct and is **not exposed** via ConnectRPC.
+- `UpdateConversationAnnotations` handles `.pbtxt` annotation files, not `state.vscdb` summaries.
+- The `CHAT_TITLE` integration point in the SDK is for UI composition, not data mutation.
+
+**Conclusion:** The only way to rename an Antigravity conversation is by directly mutating the protobuf structures in the local SQLite database (`state.vscdb`), which requires restarting the Language Server to take effect.
+
 ## Final Verdict
 
 **Full conversation backup is 100% viable** using:
