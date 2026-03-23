@@ -1,0 +1,14 @@
+# Compiled standalone binary (59 MB) — not needed for bunx
+dist/spectral
+
+# Extension source and artifacts — distributed via .vsix, not NPM
+src/extension/
+
+# Development files
+.agents/
+.github/
+.vscode/
+docs/
+*.md
+!README.md
+!LICENSE

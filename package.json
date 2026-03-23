@@ -17,8 +17,13 @@
     "spectral-curiosity": "./src/server/index.ts"
   },
   "files": [
-    "dist",
-    "src",
+    "dist/*.js",
+    "dist/*.css",
+    "dist/*.html",
+    "dist/*.svg",
+    "src/server",
+    "src/shared",
+    "src/client",
     "index.html"
   ],
   "keywords": [
