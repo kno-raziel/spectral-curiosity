@@ -8,7 +8,7 @@
 
 Runs as a **Bun full-stack app** or as a **VS Code / Antigravity extension**.
 
-![Spectral — Workspace Manager](docs/assets/screenshot-workspaces.png)
+![Spectral — Workspace Manager](https://raw.githubusercontent.com/kno-raziel/spectral-curiosity/main/docs/assets/screenshot-workspaces.png)
 
 ---
 
@@ -201,19 +201,19 @@ client (React) ─── shared (data layer) ─┬─ server/adapter.ts  (bun:s
 
 Browse, search, and inspect your backed-up conversations — even on a machine without Antigravity installed.
 
-![Backup Viewer](docs/assets/screenshot-backup-viewer.png)
+![Backup Viewer](https://raw.githubusercontent.com/kno-raziel/spectral-curiosity/main/docs/assets/screenshot-backup-viewer.png)
 
 ### Knowledge Base Explorer
 
 Visualize the knowledge items Antigravity distills from your conversations.
 
-![Knowledge Base](docs/assets/screenshot-knowledge-base.png)
+![Knowledge Base](https://raw.githubusercontent.com/kno-raziel/spectral-curiosity/main/docs/assets/screenshot-knowledge-base.png)
 
 ### Workspace Details
 
 Expand any conversation to see its artifacts, metadata, and content previews.
 
-![Workspace Details](docs/assets/screenshot-workspace-details.png)
+![Workspace Details](https://raw.githubusercontent.com/kno-raziel/spectral-curiosity/main/docs/assets/screenshot-workspace-details.png)
 
 ## Adding Workspaces
 
