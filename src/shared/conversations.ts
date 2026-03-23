@@ -126,7 +126,20 @@ async function readBrainData(cid: string): Promise<{ title: string; artifacts: A
     return { title, artifacts };
   }
 
-  for (const item of files.sort()) {
+  const fileStats = await Promise.all(
+    files.map(async (item) => {
+      try {
+        const s = await stat(join(bp, item));
+        return { item, mtime: s.mtimeMs };
+      } catch {
+        return { item, mtime: 0 };
+      }
+    }),
+  );
+
+  const sortedItems = fileStats.sort((a, b) => b.mtime - a.mtime).map((f) => f.item);
+
+  for (const item of sortedItems) {
     const isMd = item.endsWith(".md");
     const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(item);
 
