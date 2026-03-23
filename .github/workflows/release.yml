@@ -9,50 +9,6 @@ permissions:
   contents: write
 
 jobs:
-  build-binaries:
-    strategy:
-      matrix:
-        include:
-          - target: bun-darwin-arm64
-            os: macos-latest
-            artifact: spectral-macos-arm64
-          - target: bun-darwin-x64
-            os: macos-latest
-            artifact: spectral-macos-x64
-          - target: bun-linux-x64
-            os: ubuntu-latest
-            artifact: spectral-linux-x64
-          - target: bun-linux-arm64
-            os: ubuntu-latest
-            artifact: spectral-linux-arm64
-          - target: bun-windows-x64
-            os: ubuntu-latest
-            artifact: spectral-windows-x64.exe
-
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - run: bun install
-      - run: bun run build
-
-      - name: Build standalone binary
-        run: |
-          bun build --compile --minify \
-            --define 'IS_BUN_COMPILE=true' \
-            --target=${{ matrix.target }} \
-            ./src/server/index.ts \
-            --outfile dist/${{ matrix.artifact }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact }}
-          path: dist/${{ matrix.artifact }}
-
   build-extension:
     runs-on: ubuntu-latest
     steps:
@@ -74,7 +30,7 @@ jobs:
           path: src/extension/*.vsix
 
   create-release:
-    needs: [build-binaries, build-extension]
+    needs: [build-extension]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
