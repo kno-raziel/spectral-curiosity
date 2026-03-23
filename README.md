@@ -50,28 +50,37 @@ Spectral was born to solve two problems:
 
 Spectral can be used as a standalone web app or directly inside your editor as an extension. 
 
-### 1. Standalone Web App (Recommended for Management)
+### 1. Quick Start (npx / bunx) — No Install Needed
 
-If you plan to **reassign, rename, or manage** your conversations, the Standalone Web App is the recommended path. 
-
-> [!WARNING]
-> **Important:** You must **close VS Code / Antigravity** before modifying workspace assignments in the Standalone App. If Antigravity is running, it may hold an active SQLite lock or overwrite your changes upon exit.
+Run Spectral instantly without cloning or installing anything:
 
 ```bash
-# Clone the repository
+# With Bun (recommended)
+bunx spectral-curiosity
+
+# Or with Node.js
+npx spectral-curiosity
+```
+
+Open [http://localhost:3000](http://localhost:3000) — that's it.
+
+### 2. Standalone Web App (Recommended for Management)
+
+If you plan to **reassign, rename, or manage** your conversations, clone the repo for full control:
+
+> [!WARNING]
+> **Important:** You must **close VS Code / Antigravity** before modifying workspace assignments. If Antigravity is running, it may hold an active SQLite lock or overwrite your changes upon exit.
+
+```bash
 git clone https://github.com/kno-raziel/spectral-curiosity.git
 cd spectral-curiosity
-
-# Install dependencies (requires Bun 1.3+)
 bun install
-
-# Start the local server
-bun run src/server/index.ts
+bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
 
-### 2. VS Code / Antigravity Extension (Viewer & Backups)
+### 3. VS Code / Antigravity Extension (Viewer & Backups)
 
 If you strictly want to browse your centralized conversations or inspect backups without leaving your editor, install the `.vsix` extension:
 
