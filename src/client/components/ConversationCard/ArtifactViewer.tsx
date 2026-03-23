@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { fetchArtifactContent } from "../../api";
+import { fetchArtifactContent, getArtifactUrl } from "../../api";
 
 interface ArtifactViewerProps {
   conversationId: string;
@@ -16,7 +16,12 @@ export function ArtifactViewer({ conversationId, artifactName, onClose }: Artifa
   const [content, setContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(artifactName);
+  const artifactUrl = getArtifactUrl(conversationId, artifactName);
+
   useEffect(() => {
+    if (isImage) return; // Images are rendered directly via URL
+
     let cancelled = false;
     setContent(null);
     setError(null);
@@ -32,7 +37,7 @@ export function ArtifactViewer({ conversationId, artifactName, onClose }: Artifa
     return () => {
       cancelled = true;
     };
-  }, [conversationId, artifactName]);
+  }, [conversationId, artifactName, isImage]);
 
   // Close on Escape
   useEffect(() => {
@@ -48,7 +53,7 @@ export function ArtifactViewer({ conversationId, artifactName, onClose }: Artifa
       {/* Backdrop */}
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: Escape handler covers keyboard */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-9990"
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-9990"
         onClick={onClose}
       />
 
@@ -60,16 +65,29 @@ export function ArtifactViewer({ conversationId, artifactName, onClose }: Artifa
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg-secondary shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-accent-blue">📄</span>
+            <span className="text-accent-blue">{isImage ? "🖼️" : "📄"}</span>
             <span className="text-sm font-mono truncate">{artifactName}</span>
           </div>
-          <button
-            type="button"
-            className="text-text-muted hover:text-text-primary text-lg bg-transparent border-none cursor-pointer px-2 py-1 rounded hover:bg-bg-tertiary transition-colors"
-            onClick={onClose}
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href={artifactUrl}
+              download={artifactName}
+              target="_blank"
+              rel="noopener"
+              className="text-text-muted hover:text-text-primary text-xs font-medium flex items-center justify-center bg-bg-primary border border-border cursor-pointer px-3 py-1.5 rounded hover:bg-bg-tertiary transition-colors no-underline"
+              title="Download Artifact"
+            >
+              ⬇ Export
+            </a>
+            <button
+              type="button"
+              className="text-text-muted hover:text-text-primary text-lg bg-transparent border-none cursor-pointer px-2 py-1 flex items-center rounded hover:bg-bg-tertiary transition-colors"
+              onClick={onClose}
+              title="Close"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -79,15 +97,28 @@ export function ArtifactViewer({ conversationId, artifactName, onClose }: Artifa
               Failed to load: {error}
             </div>
           )}
-          {!content && !error && (
-            <div className="text-text-muted text-sm animate-pulse">Loading…</div>
-          )}
-          {content && (
-            <div
-              className="artifact-content text-sm leading-relaxed text-text-primary"
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: controlled markdown rendering
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-            />
+          
+          {isImage ? (
+            <div className="flex items-center justify-center min-h-[50vh]">
+              <img 
+                src={artifactUrl} 
+                alt={artifactName} 
+                className="max-w-full rounded border border-border shadow-lg"
+              />
+            </div>
+          ) : (
+            <>
+              {!content && !error && (
+                <div className="text-text-muted text-sm animate-pulse">Loading…</div>
+              )}
+              {content && (
+                <div
+                  className="artifact-content text-sm leading-relaxed text-text-primary"
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: controlled markdown rendering
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+                />
+              )}
+            </>
           )}
         </div>
       </div>

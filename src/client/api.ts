@@ -129,6 +129,11 @@ export async function fetchSnapshotDiff(pathA: string, pathB: string): Promise<D
 
 // ─── Artifact Content API ───────────────────────────────────────────────────
 
+export function getArtifactUrl(cid: string, name: string): string {
+  const params = new URLSearchParams({ cid, name });
+  return `${API_BASE}/api/artifact?${params}`;
+}
+
 export async function fetchArtifactContent(cid: string, name: string): Promise<string> {
   if (isVsCodeWebview) return postMessageRequest("getArtifactContent", { cid, name });
   const params = new URLSearchParams({ cid, name });
