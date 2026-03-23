@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 /**
  * Bun 1.3 full-stack server for Spectral
  *
@@ -31,6 +32,8 @@ import { join } from "node:path";
 let currentBackupDir = process.env.SPECTRAL_BACKUP_DIR || join(homedir(), "antigravity-backups");
 let backupReader = new BackupReader(currentBackupDir);
 
+const rootDir = join(import.meta.dir, "../../");
+
 Bun.serve({
   port: PORT,
   development: isCompiled ? false : { hmr: true, console: true },
@@ -38,13 +41,13 @@ Bun.serve({
     // ── Static assets ────────────────────────────────
     "/dist/app.css": {
       GET: () =>
-        new Response(Bun.file("dist/app.css"), {
+        new Response(Bun.file(join(rootDir, "dist/app.css")), {
           headers: { "Content-Type": "text/css" },
         }),
     },
     "/src/shared/icon.svg": {
       GET: () =>
-        new Response(Bun.file("src/shared/icon.svg"), {
+        new Response(Bun.file(join(rootDir, "src/shared/icon.svg")), {
           headers: { "Content-Type": "image/svg+xml" },
         }),
     },

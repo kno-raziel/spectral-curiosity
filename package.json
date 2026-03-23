@@ -1,5 +1,5 @@
 {
-  "name": "spectral",
+  "name": "spectral-curiosity",
   "private": false,
   "version": "0.1.0",
   "description": "Backup, sync, and manage Antigravity conversations",
@@ -13,6 +13,14 @@
   "bugs": {
     "url": "https://github.com/kno-raziel/spectral-curiosity/issues"
   },
+  "bin": {
+    "spectral-curiosity": "./src/server/index.ts"
+  },
+  "files": [
+    "dist",
+    "src",
+    "index.html"
+  ],
   "keywords": [
     "antigravity",
     "ai-conversations",
@@ -25,6 +33,7 @@
   ],
   "type": "module",
   "scripts": {
+    "prepublishOnly": "bun run build",
     "dev": "bunx @tailwindcss/cli -i src/client/index.css -o dist/app.css --watch & bun run --watch src/server/index.ts",
     "build": "bunx @tailwindcss/cli -i src/client/index.css -o dist/app.css --minify && bun build ./index.html --production --outdir=dist",
     "build:ext": "cd src/extension && npm install && node esbuild.mjs",
