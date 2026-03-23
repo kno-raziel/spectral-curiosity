@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { Artifact } from "../../../shared/types";
 import { ArtifactViewer } from "./ArtifactViewer";
 
@@ -7,8 +7,32 @@ interface ArtifactListProps {
   conversationId: string;
 }
 
+type SortOrder = "grouped" | "date-desc" | "date-asc";
+
 export function ArtifactList({ artifacts, conversationId }: ArtifactListProps) {
   const [selectedArtifact, setSelectedArtifact] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("grouped");
+
+  const sortedArtifacts = useMemo(() => {
+    const list = [...artifacts];
+    if (sortOrder === "date-desc") {
+      return list.sort((a, b) => b.date - a.date);
+    }
+    if (sortOrder === "date-asc") {
+      return list.sort((a, b) => a.date - b.date);
+    }
+    
+    // Default: Grouped (Markdown first, then Images)
+    const mds = list.filter((a) => a.name.endsWith(".md")).sort((a, b) => b.date - a.date);
+    const imgs = list
+      .filter((a) => /\.(png|jpe?g|gif|webp|svg)$/i.test(a.name))
+      .sort((a, b) => b.date - a.date);
+    const others = list
+      .filter((a) => !a.name.endsWith(".md") && !/\.(png|jpe?g|gif|webp|svg)$/i.test(a.name))
+      .sort((a, b) => b.date - a.date);
+      
+    return [...mds, ...imgs, ...others];
+  }, [artifacts, sortOrder]);
 
   if (artifacts.length === 0) {
     return (
@@ -18,7 +42,23 @@ export function ArtifactList({ artifacts, conversationId }: ArtifactListProps) {
 
   return (
     <>
-      {artifacts.map((a) => (
+      <div className="flex items-center justify-between mb-3 border-b border-border/50 pb-2">
+        <div className="text-xs font-medium text-text-secondary">
+          <span className="text-accent-blue">{artifacts.length}</span> artefactos
+        </div>
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+          className="bg-bg-tertiary border border-border text-xs rounded px-2 py-1 text-text-primary focus:outline-none focus:border-accent-blue font-mono appearance-none pr-6 custom-select"
+          style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center', backgroundSize: '12px' }}
+        >
+          <option value="grouped">Agrupados (Doc → Img)</option>
+          <option value="date-desc">Recientes primero</option>
+          <option value="date-asc">Antiguos primero</option>
+        </select>
+      </div>
+
+      {sortedArtifacts.map((a) => (
         <button
           key={a.name}
           type="button"

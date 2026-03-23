@@ -137,9 +137,9 @@ async function readBrainData(cid: string): Promise<{ title: string; artifacts: A
     }),
   );
 
-  const sortedItems = fileStats.sort((a, b) => b.mtime - a.mtime).map((f) => f.item);
+  const sortedItems = fileStats.sort((a, b) => b.mtime - a.mtime);
 
-  for (const item of sortedItems) {
+  for (const { item, mtime } of sortedItems) {
     const isMd = item.endsWith(".md");
     const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(item);
 
@@ -203,6 +203,7 @@ async function readBrainData(cid: string): Promise<{ title: string; artifacts: A
       summary: summary.slice(0, 400),
       preview: previewLines.join("\n").slice(0, 600),
       size: size,
+      date: mtime,
     });
   }
 

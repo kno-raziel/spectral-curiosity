@@ -6,6 +6,7 @@ export interface Artifact {
   summary: string;
   preview: string;
   size: number;
+  date: number;
 }
 
 export interface Conversation {
