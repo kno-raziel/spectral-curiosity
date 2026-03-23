@@ -47,20 +47,14 @@ Spectral was born to solve two problems:
 
 ## Installation Options
 
-Spectral can be used as a standalone web app or directly inside your editor as an extension.
+Spectral can be used as a standalone web app or directly inside your editor as an extension. 
 
-### 1. VS Code / Antigravity Extension (Recommended)
+### 1. Standalone Web App (Recommended for Management)
 
-1. Download the latest `.vsix` file from the [Releases](https://github.com/kno-raziel/spectral-curiosity/releases) page.
-2. Install it in Antigravity or VS Code via the Command Palette: **Extensions: Install from VSIX...**
-3. Or install via CLI:
-   ```bash
-   antigravity --install-extension spectral-extension-0.1.0.vsix
-   ```
+If you plan to **reassign, rename, or manage** your conversations, the Standalone Web App is the recommended path. 
 
-### 2. Standalone Web App (Local Server)
-
-If you prefer to run the UI in your browser without the editor:
+> [!WARNING]
+> **Important:** You must **close VS Code / Antigravity** before modifying workspace assignments in the Standalone App. If Antigravity is running, it may hold an active SQLite lock or overwrite your changes upon exit.
 
 ```bash
 # Clone the repository
@@ -75,6 +69,17 @@ bun run src/server/index.ts
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
+
+### 2. VS Code / Antigravity Extension (Viewer & Backups)
+
+If you strictly want to browse your centralized conversations or inspect backups without leaving your editor, install the `.vsix` extension:
+
+1. Download the latest `.vsix` file from the [Releases](https://github.com/kno-raziel/spectral-curiosity/releases) page.
+2. Install it in VS Code via the Command Palette: **Extensions: Install from VSIX...**
+3. Or install via CLI:
+   ```bash
+   antigravity --install-extension spectral-extension-0.1.0.vsix
+   ```
 
 ---
 
