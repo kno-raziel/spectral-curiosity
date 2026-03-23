@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { fetchArtifactContent } from "../../api";
 
 interface ArtifactViewerProps {
@@ -9,7 +10,7 @@ interface ArtifactViewerProps {
 
 /**
  * Slide-out panel showing full artifact content.
- * Renders markdown text with basic formatting (headers, bold, code blocks, links).
+ * Uses a React Portal to escape parent stacking contexts.
  */
 export function ArtifactViewer({ conversationId, artifactName, onClose }: ArtifactViewerProps) {
   const [content, setContent] = useState<string | null>(null);
@@ -42,20 +43,19 @@ export function ArtifactViewer({ conversationId, artifactName, onClose }: Artifa
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
-      <button
-        type="button"
-        className="fixed inset-0 bg-black/50 z-40 border-none cursor-default"
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: Escape handler covers keyboard */}
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-9990"
         onClick={onClose}
-        aria-label="Close artifact viewer"
       />
 
       {/* Panel */}
       <div
-        className="fixed top-0 right-0 bottom-0 w-[min(700px,85vw)] bg-bg-primary z-50 flex flex-col shadow-2xl animate-[slideIn_0.2s_ease]"
-        style={{ borderLeft: "1px solid var(--border)" }}
+        className="fixed top-0 right-0 bottom-0 w-[min(700px,85vw)] bg-bg-primary z-9999 flex flex-col shadow-[−8px_0_30px_rgba(0,0,0,0.5)] animate-[slideIn_0.2s_ease]"
+        style={{ borderLeft: "2px solid var(--color-accent-blue)" }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg-secondary shrink-0">
@@ -91,7 +91,8 @@ export function ArtifactViewer({ conversationId, artifactName, onClose }: Artifa
           )}
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }
 

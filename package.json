@@ -25,7 +25,7 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "bunx @tailwindcss/cli -i src/client/index.css -o dist/app.css && bun run src/server/index.ts",
+    "dev": "bunx @tailwindcss/cli -i src/client/index.css -o dist/app.css --watch & bun run src/server/index.ts",
     "build": "bunx @tailwindcss/cli -i src/client/index.css -o dist/app.css --minify && bun build ./index.html --production --outdir=dist",
     "build:ext": "cd src/extension && npm install && node esbuild.mjs",
     "build:bin": "bun build --compile --minify --define 'IS_BUN_COMPILE=true' ./src/server/index.ts --outfile dist/spectral",
