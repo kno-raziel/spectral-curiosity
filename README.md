@@ -25,13 +25,14 @@ Spectral was born to solve two problems:
 
 ## Features
 
-- 📂 **Auto-detects workspaces** from Antigravity's sidebar database
-- 🔍 **Search & filter** conversations by title, artifacts, workspace, or status
-- 🔄 **Reassign** conversations to different workspaces (with protobuf encoding)
-- 📝 **View AI artifacts** — summaries, content previews, and metadata
-- ➕ **Add new workspaces** for assignment
-- 💾 **Save changes** back to the Antigravity database (with automatic backups)
-- 🔐 **Cross-platform** — macOS, Linux, and Windows
+- 📂 **Auto-detects workspaces** from Antigravity's local SQLite database
+- 🔍 **Universal Search** — Filter conversations by title, artifact content, workspace, or status
+- 🖼️ **Interactive Artifact Viewer** — View AI-generated images, diffs, and markdown summaries full-screen without leaving Spectral
+- 🔄 **Reassign & Rescue** — Rescue orphaned conversations and safely reassign them to new codebases (with seamless Protobuf encoding)
+- 💾 **Time-Machine Backups** — Browse, search, and restore from your Antigravity incremental `.pb` backups
+- 🧠 **Knowledge Base Explorer** — Visualize and filter the synthesized Knowledge Items extracted by your AI workflows
+- 🧹 **Artifact Organization** — Smart grouping (Context Docs → Attachments) with strict chronological timeline sorting
+- ⚡ **Zero-Dependency Core** — Built on Bun and React 19, deployable as a Standalone App or VS Code Extension
 
 ## Stack
 
