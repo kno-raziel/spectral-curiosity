@@ -4,9 +4,16 @@
  *
  * Single process: API routes + React SPA with HMR.
  * No Vite, no CORS, no concurrently.
+ *
+ * Supports two runtime modes:
+ * - Dev mode (cloned repo): imports index.html for HMR
+ * - Bunx mode (npm install): serves pre-built dist/ files
  */
 
-import app from "../../index.html";
+import { existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { saveAssignments } from "../shared/assignments";
 import { BackupReader } from "../shared/backup-reader";
 import { diffSnapshots, listBackups } from "../shared/backups";
@@ -25,20 +32,65 @@ const PORT = 3000;
 declare const IS_BUN_COMPILE: boolean;
 const isCompiled = typeof IS_BUN_COMPILE !== "undefined" && IS_BUN_COMPILE;
 
-// Initialize backup reader if a backup directory is configured
-import { homedir } from "node:os";
-import { join } from "node:path";
+// Detect bunx/npx mode: running from inside node_modules
+const isBunxMode = import.meta.dir.includes("node_modules");
 
 let currentBackupDir = process.env.SPECTRAL_BACKUP_DIR || join(homedir(), "antigravity-backups");
 let backupReader = new BackupReader(currentBackupDir);
 
 const rootDir = join(import.meta.dir, "../../");
+const distDir = join(rootDir, "dist");
+
+// ── SPA handler ─────────────────────────────────────────
+// In dev mode, import the HTML file for HMR support.
+// In bunx mode, we serve pre-built dist/ files instead.
+// biome-ignore lint/suspicious/noExplicitAny: Bun HTML import returns an opaque route handler
+let spaHandler: any;
+
+if (!isBunxMode && !isCompiled) {
+  spaHandler = (await import("../../index.html")).default;
+} else {
+  // Bunx/compiled mode: serve pre-built dist/ files
+  const distIndexHtml = Bun.file(join(distDir, "index.html"));
+
+  spaHandler = async (req: Request): Promise<Response> => {
+    const url = new URL(req.url);
+    const pathname = url.pathname;
+
+    // Try to serve a dist/ file matching the request path
+    if (pathname !== "/") {
+      const filename = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+      const filepath = join(distDir, filename);
+      if (existsSync(filepath)) {
+        const ext = filename.split(".").pop() ?? "";
+        const mimeTypes: Record<string, string> = {
+          js: "text/javascript",
+          css: "text/css",
+          html: "text/html",
+          svg: "image/svg+xml",
+          png: "image/png",
+          woff2: "font/woff2",
+        };
+        return new Response(Bun.file(filepath), {
+          headers: { "Content-Type": mimeTypes[ext] ?? "application/octet-stream" },
+        });
+      }
+    }
+
+    // Fallback: serve index.html for SPA routing
+    return new Response(distIndexHtml, {
+      headers: { "Content-Type": "text/html" },
+    });
+  };
+}
+
+// ── API Routes ──────────────────────────────────────────
 
 Bun.serve({
   port: PORT,
-  development: isCompiled ? false : { hmr: true, console: true },
+  development: isBunxMode || isCompiled ? false : { hmr: true, console: true },
   routes: {
-    // ── Static assets ────────────────────────────────
+    // ── Static assets (dev mode only — bunx handles via spaHandler) ──
     "/dist/app.css": {
       GET: () =>
         new Response(Bun.file(join(rootDir, "dist/app.css")), {
@@ -58,10 +110,10 @@ Bun.serve({
         try {
           const workspaces = await loadWorkspaces();
           const conversations = await loadConversations(workspaces);
-          return Response.json(conversations);
-        } catch (err) {
-          console.error("[GET /api/conversations]", err);
-          return Response.json({ error: "Failed to load conversations" }, { status: 500 });
+          return Response.json({ workspaces, conversations });
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          return Response.json({ error: msg }, { status: 500 });
         }
       },
     },
@@ -71,9 +123,9 @@ Bun.serve({
         try {
           const workspaces = await loadWorkspaces();
           return Response.json(workspaces);
-        } catch (err) {
-          console.error("[GET /api/workspaces]", err);
-          return Response.json({ error: "Failed to load workspaces" }, { status: 500 });
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          return Response.json({ error: msg }, { status: 500 });
         }
       },
     },
@@ -81,68 +133,62 @@ Bun.serve({
     "/api/save": {
       POST: async (req: Request) => {
         try {
-          const payload = (await req.json()) as {
-            assignments?: Record<string, string>;
-            renames?: Record<string, string>;
+          const body = (await req.json()) as {
+            assignments: Record<string, string>;
+            renames: Record<string, string>;
           };
-          const workspaces = await loadWorkspaces();
-          const result = await saveAssignments(
-            {
-              assignments: payload.assignments ?? {},
-              renames: payload.renames ?? {},
-            },
-            workspaces,
-          );
+          const result = await saveAssignments(body.assignments, body.renames);
           return Response.json(result);
-        } catch (err) {
-          console.error("[POST /api/save]", err);
-          return Response.json({ error: "Failed to save changes" }, { status: 500 });
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          return Response.json({ error: msg }, { status: 500 });
         }
       },
     },
 
     "/api/paths": {
-      GET: () =>
-        Response.json({
-          db: DB_PATH,
-          brain: BRAIN_DIR,
-          conversations: CONVERSATIONS_DIR,
-        }),
+      GET: () => {
+        return Response.json({
+          dbPath: DB_PATH,
+          conversationsDir: CONVERSATIONS_DIR,
+          brainDir: BRAIN_DIR,
+        });
+      },
     },
 
     "/api/artifact": {
       GET: async (req: Request) => {
-        try {
-          const url = new URL(req.url);
-          const cid = url.searchParams.get("cid");
-          const name = url.searchParams.get("name");
+        const url = new URL(req.url);
+        const filePath = url.searchParams.get("path");
+        if (!filePath)
+          return Response.json({ error: "Missing ?path=" }, { status: 400 });
 
-          if (!cid || !name || cid.includes("..") || name.includes("..") || name.includes("/")) {
-            return Response.json({ error: "Invalid parameters" }, { status: 400 });
-          }
-
-          const filePath = join(BRAIN_DIR, cid, name);
-          const file = Bun.file(filePath);
-          if (!(await file.exists())) {
-            return Response.json({ error: "File not found" }, { status: 404 });
-          }
-
-          return new Response(file);
-        } catch (err) {
-          console.error("[GET /api/artifact]", err);
-          return Response.json({ error: "Failed to read artifact" }, { status: 500 });
+        // Security: ensure path is under BRAIN_DIR or CONVERSATIONS_DIR
+        const resolved = join(filePath);
+        if (
+          !resolved.startsWith(BRAIN_DIR) &&
+          !resolved.startsWith(CONVERSATIONS_DIR) &&
+          !resolved.startsWith(currentBackupDir)
+        ) {
+          return Response.json({ error: "Forbidden path" }, { status: 403 });
         }
+
+        const file = Bun.file(resolved);
+        if (!(await file.exists()))
+          return Response.json({ error: "Not found" }, { status: 404 });
+
+        return new Response(file);
       },
     },
 
     "/api/snapshots": {
       GET: async () => {
         try {
-          const snapshots = await listBackups();
+          const snapshots = await listBackups(CONVERSATIONS_DIR);
           return Response.json(snapshots);
-        } catch (err) {
-          console.error("[GET /api/snapshots]", err);
-          return Response.json({ error: "Failed to list snapshots" }, { status: 500 });
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          return Response.json({ error: msg }, { status: 500 });
         }
       },
     },
@@ -151,32 +197,37 @@ Bun.serve({
       GET: async (req: Request) => {
         try {
           const url = new URL(req.url);
-          const a = url.searchParams.get("a") ?? "current";
+          const a = url.searchParams.get("a");
           const b = url.searchParams.get("b") ?? "current";
-          const result = diffSnapshots(a, b);
+          if (!a) return Response.json({ error: "Missing ?a=" }, { status: 400 });
+          const result = await diffSnapshots(CONVERSATIONS_DIR, a, b);
           return Response.json(result);
-        } catch (err) {
-          console.error("[GET /api/snapshots/diff]", err);
-          return Response.json({ error: "Failed to diff snapshots" }, { status: 500 });
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          return Response.json({ error: msg }, { status: 500 });
         }
       },
     },
 
     // ── Backup directory config ──
     "/api/backups/config": {
-      GET: () => Response.json({ directory: currentBackupDir }),
+      GET: () => Response.json({ backupDir: currentBackupDir }),
       POST: async (req: Request) => {
         try {
-          const body = (await req.json()) as { directory?: string };
-          if (!body.directory) {
-            return Response.json({ error: "Missing 'directory' field" }, { status: 400 });
-          }
-          currentBackupDir = body.directory;
+          const body = (await req.json()) as { backupDir: string };
+          if (!body.backupDir)
+            return Response.json({ error: "Missing backupDir" }, { status: 400 });
+
+          // Validate path exists and contains backup-like files
+          const entries = await readdir(body.backupDir).catch(() => null);
+          if (!entries)
+            return Response.json({ error: "Directory not found" }, { status: 404 });
+
+          currentBackupDir = body.backupDir;
           backupReader = new BackupReader(currentBackupDir);
-          console.log(`[Config] Backup directory changed to: ${currentBackupDir}`);
-          return Response.json({ directory: currentBackupDir });
-        } catch (err) {
-          console.error("[POST /api/backups/config]", err);
+          return Response.json({ backupDir: currentBackupDir });
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
           return Response.json({ error: "Failed to update config" }, { status: 500 });
         }
       },
@@ -197,10 +248,11 @@ Bun.serve({
     },
 
     // ── React SPA (catch-all) ────────────────────────
-    "/*": app,
+    "/*": spaHandler,
   },
 });
 
+const mode = isBunxMode ? "bunx" : isCompiled ? "compiled" : "dev";
 console.log();
 console.log("═══════════════════════════════════════════════");
 console.log("  ⚡ Spectral — Bun Full-Stack");
@@ -208,7 +260,7 @@ console.log("══════════════════════�
 console.log();
 console.log(`  App:  http://localhost:${PORT}`);
 console.log(`  API:  http://localhost:${PORT}/api/*`);
-console.log(`  HMR:  enabled`);
+console.log(`  Mode: ${mode}`);
 console.log(`  DB:   ${DB_PATH}`);
 console.log(`  Brain: ${BRAIN_DIR}`);
 console.log();
