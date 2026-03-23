@@ -12,9 +12,11 @@ import { decodeVarint } from "./protobuf";
  */
 export function parseTrajectoryEntries(decoded: Uint8Array): {
   entries: Map<string, string>;
+  rawEntries: Map<string, Uint8Array>;
   order: string[];
 } {
   const entries = new Map<string, string>();
+  const rawEntries = new Map<string, Uint8Array>();
   const order: string[] = [];
   let pos = 0;
 
@@ -64,9 +66,10 @@ export function parseTrajectoryEntries(decoded: Uint8Array): {
 
     if (uid && infoB64) {
       entries.set(uid, infoB64);
+      rawEntries.set(uid, entry);
       order.push(uid);
     }
   }
 
-  return { entries, order };
+  return { entries, rawEntries, order };
 }

@@ -44,11 +44,16 @@ export async function saveAssignments(
       }
 
       const decoded = new Uint8Array(Buffer.from(row.value, "base64"));
-      const { entries: entriesData, order: entriesOrder } = parseTrajectoryEntries(decoded);
+      const {
+        entries: entriesData,
+        rawEntries: rawEntriesData,
+        order: entriesOrder,
+      } = parseTrajectoryEntries(decoded);
 
       const { resultChunks, updated, renamed } = rebuildEntries(
         entriesOrder,
         entriesData,
+        rawEntriesData,
         payload.assignments,
         payload.renames,
         workspaces,
@@ -83,6 +88,7 @@ export async function saveAssignments(
 function rebuildEntries(
   order: string[],
   data: Map<string, string>,
+  rawEntries: Map<string, Uint8Array>,
   assignments: Record<string, string>,
   renames: Record<string, string>,
   workspaces: WorkspaceEntry[],
@@ -91,25 +97,24 @@ function rebuildEntries(
   let renamed = 0;
   const wsMap = new Map(workspaces.map((w) => [w.name, w]));
   const resultChunks: Uint8Array[] = [];
+  const processedCids = new Set<string>();
 
   for (const cid of order) {
+    processedCids.add(cid);
     const infoB64 = data.get(cid);
-    if (!infoB64) continue;
+    const origEntryBytes = rawEntries.get(cid);
+    if (!infoB64 || !origEntryBytes) continue;
 
     let inner: Uint8Array;
     try {
       inner = new Uint8Array(Buffer.from(infoB64, "base64"));
     } catch {
-      const sub = encodeStringField(1, infoB64);
-      const entry = concatBytes(encodeStringField(1, cid), encodeLengthDelimited(2, sub));
-      resultChunks.push(encodeLengthDelimited(1, entry));
+      resultChunks.push(encodeLengthDelimited(1, origEntryBytes));
       continue;
     }
 
     if (cid in assignments || Object.hasOwn(assignments, cid)) {
       const wsName = assignments[cid];
-      inner = stripField(inner, 4);
-      inner = stripField(inner, 5);
       inner = stripField(inner, 9);
 
       const ws = wsMap.get(wsName);
@@ -132,6 +137,35 @@ function rebuildEntries(
 
     const newB64 = Buffer.from(inner).toString("base64");
     const sub = encodeStringField(1, newB64);
+
+    // Preserve ALL other root metadata (timestamps, history, pins)
+    const preservedRootFields = stripField(origEntryBytes, 2);
+    const entry = concatBytes(preservedRootFields, encodeLengthDelimited(2, sub));
+    resultChunks.push(encodeLengthDelimited(1, entry));
+  }
+
+  // Create fresh entries for orphaned conversations (exist on disk but not in DB index)
+  const allTargetCids = new Set([...Object.keys(assignments), ...Object.keys(renames)]);
+  for (const cid of allTargetCids) {
+    if (processedCids.has(cid)) continue;
+
+    // Build a minimal inner info blob from scratch
+    const title = renames[cid] || `Conversation ${cid.slice(0, 8)}`;
+    let inner: Uint8Array = encodeStringField(1, title);
+
+    const wsName = assignments[cid];
+    if (wsName) {
+      const ws = wsMap.get(wsName);
+      if (ws) {
+        inner = concatBytes(inner, buildField9(ws));
+        updated += 1;
+      }
+    }
+
+    if (cid in renames) renamed += 1;
+
+    const infoB64 = Buffer.from(inner).toString("base64");
+    const sub = encodeStringField(1, infoB64);
     const entry = concatBytes(encodeStringField(1, cid), encodeLengthDelimited(2, sub));
     resultChunks.push(encodeLengthDelimited(1, entry));
   }
