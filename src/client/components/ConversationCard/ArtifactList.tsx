@@ -1,10 +1,15 @@
+import { useState } from "react";
 import type { Artifact } from "../../../shared/types";
+import { ArtifactViewer } from "./ArtifactViewer";
 
 interface ArtifactListProps {
   artifacts: Artifact[];
+  conversationId: string;
 }
 
-export function ArtifactList({ artifacts }: ArtifactListProps) {
+export function ArtifactList({ artifacts, conversationId }: ArtifactListProps) {
+  const [selectedArtifact, setSelectedArtifact] = useState<string | null>(null);
+
   if (artifacts.length === 0) {
     return (
       <div className="text-xs text-text-muted italic">No brain artifacts for this conversation</div>
@@ -14,9 +19,11 @@ export function ArtifactList({ artifacts }: ArtifactListProps) {
   return (
     <>
       {artifacts.map((a) => (
-        <div
+        <button
           key={a.name}
-          className="border border-border rounded-md px-3 py-2.5 mb-2 bg-bg-secondary"
+          type="button"
+          className="border border-border rounded-md px-3 py-2.5 mb-2 bg-bg-secondary w-full text-left cursor-pointer transition-all duration-150 hover:border-accent-blue hover:bg-bg-tertiary/50 font-inherit"
+          onClick={() => setSelectedArtifact(a.name)}
         >
           <div className="text-[11px] font-mono text-accent-blue mb-1">
             📄 {a.name} ({Math.round(a.size / 1024)} KB)
@@ -30,8 +37,16 @@ export function ArtifactList({ artifacts }: ArtifactListProps) {
               {a.preview}
             </pre>
           )}
-        </div>
+        </button>
       ))}
+
+      {selectedArtifact && (
+        <ArtifactViewer
+          conversationId={conversationId}
+          artifactName={selectedArtifact}
+          onClose={() => setSelectedArtifact(null)}
+        />
+      )}
     </>
   );
 }

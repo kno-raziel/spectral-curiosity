@@ -107,6 +107,34 @@ Bun.serve({
         }),
     },
 
+    "/api/artifact": {
+      GET: async (req: Request) => {
+        try {
+          const url = new URL(req.url);
+          const cid = url.searchParams.get("cid");
+          const name = url.searchParams.get("name");
+
+          if (!cid || !name || cid.includes("..") || name.includes("..") || name.includes("/")) {
+            return Response.json({ error: "Invalid parameters" }, { status: 400 });
+          }
+
+          const filePath = join(BRAIN_DIR, cid, name);
+          const file = Bun.file(filePath);
+          if (!(await file.exists())) {
+            return Response.json({ error: "File not found" }, { status: 404 });
+          }
+
+          const content = await file.text();
+          return new Response(content, {
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          });
+        } catch (err) {
+          console.error("[GET /api/artifact]", err);
+          return Response.json({ error: "Failed to read artifact" }, { status: 500 });
+        }
+      },
+    },
+
     "/api/snapshots": {
       GET: async () => {
         try {

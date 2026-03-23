@@ -107,7 +107,7 @@ export function ConversationCard({
       {/* Expanded details */}
       {expanded && (
         <div className="border-t border-border px-3.5 py-3 pl-[66px] bg-bg-primary/40 animate-[slideDown_0.2s_ease]">
-          <ArtifactList artifacts={c.artifacts} />
+          <ArtifactList artifacts={c.artifacts} conversationId={c.id} />
         </div>
       )}
     </div>

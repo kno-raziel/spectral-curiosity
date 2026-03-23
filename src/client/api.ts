@@ -127,6 +127,16 @@ export async function fetchSnapshotDiff(pathA: string, pathB: string): Promise<D
   return res.json();
 }
 
+// ─── Artifact Content API ───────────────────────────────────────────────────
+
+export async function fetchArtifactContent(cid: string, name: string): Promise<string> {
+  if (isVsCodeWebview) return postMessageRequest("getArtifactContent", { cid, name });
+  const params = new URLSearchParams({ cid, name });
+  const res = await fetch(`${API_BASE}/api/artifact?${params}`);
+  if (!res.ok) throw new Error("Failed to load artifact");
+  return res.text();
+}
+
 // ─── Backup Viewer API ──────────────────────────────────────────────────────
 
 import type { ConversationBackupMeta } from "../shared/backup-format";
