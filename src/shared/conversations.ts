@@ -34,7 +34,7 @@ export async function loadConversations(workspaces: WorkspaceEntry[]): Promise<C
 
     conversations.push({
       id: cid,
-      title: dbTitle || brainTitle || "(no title)",
+      title: brainTitle || dbTitle || "(no title)",
       brainTitle: brainTitle || "",
       date: modTime,
       size: sizeMb,
