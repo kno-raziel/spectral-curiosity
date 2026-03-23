@@ -45,30 +45,58 @@ Spectral was born to solve two problems:
 | Types    | TypeScript 5.9 (strict)      |
 | HMR      | Built-in (Bun)               |
 
-## Quick Start
+## Installation Options
+
+Spectral can be used as a standalone web app or directly inside your editor as an extension.
+
+### 1. VS Code / Antigravity Extension (Recommended)
+
+1. Download the latest `.vsix` file from the [Releases](https://github.com/kno-raziel/spectral-curiosity/releases) page.
+2. Install it in Antigravity or VS Code via the Command Palette: **Extensions: Install from VSIX...**
+3. Or install via CLI:
+   ```bash
+   antigravity --install-extension spectral-extension-0.1.0.vsix
+   ```
+
+### 2. Standalone Web App (Local Server)
+
+If you prefer to run the UI in your browser without the editor:
 
 ```bash
-# Install dependencies
+# Clone the repository
+git clone https://github.com/kno-raziel/spectral-curiosity.git
+cd spectral-curiosity
+
+# Install dependencies (requires Bun 1.3+)
 bun install
 
-# Start dev server (API + React SPA + HMR on port 3000)
-bun run dev
+# Start the local server
+bun run src/server/index.ts
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
 
-### Extension
+---
+
+## Local Development
+
+If you're hacking on Spectral, the project provides built-in HMR for the React frontend:
 
 ```bash
-# Build the VS Code / Antigravity extension
-bun run build:ext
-
-# Package as .vsix
-cd src/extension && npx vsce package
-
-# Install in Antigravity
-antigravity --install-extension src/extension/spectral-extension-0.1.0.vsix
+# Start dev server (API + React SPA + CSS Watcher on port 3000)
+bun run dev
 ```
+
+### Building the Extension from Source
+
+You can manually build and package the `.vsix` extension:
+
+```bash
+# Install dependencies, build, and package the .vsix in one step
+bun run package:ext
+```
+
+The resulting `.vsix` will be generated in `src/extension/`.
 
 ## Scripts
 
@@ -188,6 +216,18 @@ Click **+ Workspace** in the filter bar and provide:
 - **URI** — Full path (e.g., `~/projects/my-project`)
 
 Workspaces are saved to `~/.gemini/antigravity/spectral-workspaces.json`.
+
+## Contributing
+
+Spectral is built using **Agentic AI Pairing** (Cursor, Antigravity, Claude, etc). 
+
+If you'd like to contribute, please read the `AGENTS.md` file first. This file serves as the universal context for the project's architecture, strict type-safety rules, and component patterns. All PRs are expected to comply with the project standards defined in `AGENTS.md`.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Pass all checks (`bun run check`)
+4. Commit your changes
+5. Open a Pull Request
 
 ## License
 
