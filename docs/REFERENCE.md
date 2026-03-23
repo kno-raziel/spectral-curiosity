@@ -217,21 +217,21 @@ User assigns workspace in Spectral UI
 - **Phase 1.3** — Backup engine with SQLite fallback, rotation, resilience
 - **Phase 1.4** — Automated scheduling (interval + event-driven)
 - **Orphaned conversations fix** — Fresh DB entries for conversations missing from index
-
-### In Progress 🔧
-
-- **Phase 2 Round 1** — Backup Viewer UI (browse, search, read exported conversations)
-  - BackupReader shared module
-  - API routes (`/api/backups/*`)
-  - React UI with chat-like layout, collapsible tool calls, dark theme
-- **Phase 1.5** — Manual export UI in webview panel
+- **Phase 2 Round 1** — Backup Viewer UI:
+  - `BackupReader` shared module (`src/shared/backup-reader.ts`)
+  - API routes: 10+ endpoints under `/api/backups/*` (`src/server/routes/backup-viewer.ts`)
+  - React UI: `BackupViewer` component with conversation browsing
+  - Trajectory types extracted to `src/shared/trajectory-types.ts`
+  - Full-text search: `/api/backups/:id/search?q=`
+  - Brain file tree + knowledge artifact serving
+  - Backup directory config API (`GET/POST /api/backups/config`)
 
 ### Pending 📋
 
-- **Phase 2 Round 2** — CLI + cross-platform binary distribution (GitHub Releases)
-- Paginated step fetch (`GetCascadeTrajectorySteps` with `startIndex`/`endIndex`)
-- Incremental backup (skip unchanged conversations)
-- Full-text search across all backed-up conversations
+- **Phase 1.5** — Manual export UI in webview panel (no export button in extension webview yet)
+- **Phase 2 Round 2** — CLI args + cross-platform binary distribution (binary compiles but no CLI interface)
+- Paginated step fetch (`GetCascadeTrajectorySteps` with `startIndex`/`endIndex` — RPC exists but pagination not used)
+- Incremental backup (skip unchanged conversations via `lastModifiedTime`)
 
 ### Future Ideas 💡
 
