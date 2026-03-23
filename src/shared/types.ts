@@ -18,6 +18,16 @@ export interface Conversation {
   artifacts: Artifact[];
   workspace: string;
   workspaceUri: string;
+  /** Number of conversation turns (from protobuf F2) */
+  turnCount?: number;
+  /** Whether the conversation is currently active (from protobuf F5) */
+  isActive?: boolean;
+  /** Creation timestamp as ISO string (from protobuf F3) */
+  createdAt?: string;
+  /** Associated git repo slug, e.g. "user/repo" (from protobuf F9.3) */
+  gitRepo?: string;
+  /** Associated git branch (from protobuf F9.4) */
+  gitBranch?: string;
 }
 
 export interface SaveResult {

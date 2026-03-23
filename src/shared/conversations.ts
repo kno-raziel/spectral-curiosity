@@ -3,12 +3,12 @@
  * to build the full conversation list.
  */
 
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 
 import { DB_KEYS, readDbValue } from "./database";
 import { BRAIN_DIR, CONVERSATIONS_DIR } from "./paths";
-import { decodeVarint, extractField9Uri } from "./protobuf";
+import { decodeVarint } from "./protobuf";
 import { parseTrajectoryEntries } from "./trajectories";
 import type { Artifact, Conversation, WorkspaceEntry } from "./types";
 
@@ -30,17 +30,22 @@ export async function loadConversations(workspaces: WorkspaceEntry[]): Promise<C
     const sizeMb = Math.round((size / 1024 / 1024) * 10) / 10;
 
     const { title: brainTitle, artifacts } = await readBrainData(cid);
-    const { title: dbTitle, wsName, wsUri } = extractDbMetadata(cid, entries, workspaces);
+    const meta = extractDbMetadata(cid, entries, workspaces);
 
     conversations.push({
       id: cid,
-      title: brainTitle || dbTitle || "(no title)",
+      title: brainTitle || meta.title || "(no title)",
       brainTitle: brainTitle || "",
       date: modTime,
       size: sizeMb,
       artifacts,
-      workspace: wsName,
-      workspaceUri: wsUri,
+      workspace: meta.wsName,
+      workspaceUri: meta.wsUri,
+      turnCount: meta.turnCount,
+      isActive: meta.isActive,
+      createdAt: meta.createdAt,
+      gitRepo: meta.gitRepo,
+      gitBranch: meta.gitBranch,
     });
   }
 
@@ -80,38 +85,173 @@ function readTrajectorySummaries(): { entries: Map<string, string> } {
   return parseTrajectoryEntries(decoded);
 }
 
+interface DbMetadata {
+  title: string;
+  wsName: string;
+  wsUri: string;
+  turnCount?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  gitRepo?: string;
+  gitBranch?: string;
+}
+
+/**
+ * Parse a protobuf Timestamp message (F1=seconds, F2=nanos) → ISO string.
+ */
+function parseTimestamp(data: Uint8Array): string | undefined {
+  let pos = 0;
+  let seconds = 0;
+  while (pos < data.length) {
+    const tag = decodeVarint(data, pos);
+    pos = tag.pos;
+    const fn = tag.value >> 3;
+    const wt = tag.value & 7;
+    if (wt === 0) {
+      const v = decodeVarint(data, pos);
+      pos = v.pos;
+      if (fn === 1) seconds = v.value;
+    } else if (wt === 2) {
+      const len = decodeVarint(data, pos);
+      pos = len.pos + len.value;
+    } else {
+      break;
+    }
+  }
+  if (seconds > 0) {
+    return new Date(seconds * 1000).toISOString().slice(0, 16).replace("T", " ");
+  }
+  return undefined;
+}
+
+/**
+ * Parse WorkspaceInfo (F9) sub-fields: primary_uri(1), git_context(3), branch(4).
+ */
+function parseWorkspaceInfo(data: Uint8Array): {
+  uri: string;
+  gitRepo?: string;
+  gitBranch?: string;
+} {
+  let pos = 0;
+  let uri = "";
+  let gitRepo: string | undefined;
+  let gitBranch: string | undefined;
+  const decoder = new TextDecoder();
+
+  while (pos < data.length) {
+    const tag = decodeVarint(data, pos);
+    pos = tag.pos;
+    const fn = tag.value >> 3;
+    const wt = tag.value & 7;
+
+    if (wt === 2) {
+      const len = decodeVarint(data, pos);
+      pos = len.pos;
+      const content = data.slice(pos, pos + len.value);
+      pos += len.value;
+
+      if (fn === 1) {
+        uri = decoder.decode(content);
+      } else if (fn === 3) {
+        // GitContext: parse sub-fields F1=repo_name
+        let gp = 0;
+        while (gp < content.length) {
+          const gt = decodeVarint(content, gp);
+          gp = gt.pos;
+          const gfn = gt.value >> 3;
+          const gwt = gt.value & 7;
+          if (gwt === 2) {
+            const gl = decodeVarint(content, gp);
+            gp = gl.pos;
+            if (gfn === 1) {
+              gitRepo = decoder.decode(content.slice(gp, gp + gl.value));
+            }
+            gp += gl.value;
+          } else if (gwt === 0) {
+            const gv = decodeVarint(content, gp);
+            gp = gv.pos;
+          } else {
+            break;
+          }
+        }
+      } else if (fn === 4) {
+        gitBranch = decoder.decode(content);
+      }
+    } else if (wt === 0) {
+      const v = decodeVarint(data, pos);
+      pos = v.pos;
+    } else {
+      break;
+    }
+  }
+
+  return { uri, gitRepo, gitBranch };
+}
+
 function extractDbMetadata(
   cid: string,
   entries: Map<string, string>,
   workspaces: WorkspaceEntry[],
-): { title: string; wsName: string; wsUri: string } {
-  let title = "";
-  let wsName = "";
-  let wsUri = "";
+): DbMetadata {
+  const result: DbMetadata = { title: "", wsName: "", wsUri: "" };
 
   const infoB64 = entries.get(cid);
-  if (!infoB64) return { title, wsName, wsUri };
+  if (!infoB64) return result;
 
   try {
     const inner = new Uint8Array(Buffer.from(infoB64, "base64"));
+    const decoder = new TextDecoder();
+    let pos = 0;
 
-    const t = decodeVarint(inner, 0);
-    if (t.value >> 3 === 1 && (t.value & 7) === 2) {
-      const tl = decodeVarint(inner, t.pos);
-      title = new TextDecoder().decode(inner.slice(tl.pos, tl.pos + tl.value));
-    }
+    while (pos < inner.length) {
+      const tag = decodeVarint(inner, pos);
+      pos = tag.pos;
+      const fn = tag.value >> 3;
+      const wt = tag.value & 7;
 
-    const uri = extractField9Uri(inner);
-    if (uri) {
-      wsUri = uri;
-      const match = workspaces.find((w) => w.uri === uri);
-      wsName = match ? match.name : uri.split("/").pop() || uri;
+      if (wt === 0) {
+        // Varint fields: F2=turnCount, F5=isActive
+        const v = decodeVarint(inner, pos);
+        pos = v.pos;
+        if (fn === 2) result.turnCount = v.value;
+        if (fn === 5) result.isActive = v.value === 1;
+      } else if (wt === 2) {
+        // Length-delimited fields
+        const len = decodeVarint(inner, pos);
+        pos = len.pos;
+        const content = inner.slice(pos, pos + len.value);
+        pos += len.value;
+
+        if (fn === 1) {
+          // Title
+          result.title = decoder.decode(content);
+        } else if (fn === 3) {
+          // Timestamp created_at
+          result.createdAt = parseTimestamp(content);
+        } else if (fn === 9) {
+          // WorkspaceInfo — parse sub-fields
+          const ws = parseWorkspaceInfo(content);
+          if (ws.uri) {
+            result.wsUri = ws.uri;
+            const match = workspaces.find((w) => w.uri === ws.uri);
+            result.wsName = match ? match.name : ws.uri.split("/").pop() || ws.uri;
+          }
+          if (ws.gitRepo) result.gitRepo = ws.gitRepo;
+          if (ws.gitBranch) result.gitBranch = ws.gitBranch;
+        }
+      } else if (wt === 1) {
+        pos += 8; // 64-bit
+      } else if (wt === 5) {
+        pos += 4; // 32-bit
+      } else {
+        break;
+      }
     }
   } catch {
     // skip corrupt entries
   }
 
-  return { title, wsName, wsUri };
+  return result;
 }
 
 async function readBrainData(cid: string): Promise<{ title: string; artifacts: Artifact[] }> {

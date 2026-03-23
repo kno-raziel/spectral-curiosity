@@ -1,0 +1,127 @@
+// ============================================================================
+// Antigravity IDE `trajectorySummaries` Protobuf Schema
+// Reverse-Engineered from Live Database (state.vscdb)
+//
+// SOURCE: https://github.com/ag-donald/Antigravity-Database-Manager
+// LICENSE: Unlicense (public domain)
+//
+// METHODOLOGY:
+//   Every field was extracted by a precision byte-level parser reading
+//   the live database at:
+//     <APPDATA>/Antigravity/User/globalStorage/state.vscdb
+//   Key: antigravityUnifiedStateSync.trajectorySummaries
+//
+// IMPORTANT: Fields 2, 5, 12, 14, 15, 16, 17 are ABSENT from simple/new chats.
+//   Proto3 omits zero-value fields, so these are populated only for active
+//   conversations with history.
+// ============================================================================
+
+syntax = "proto3";
+
+// Root container — base64 blob is a concatenation of repeated TrajectorySummary
+message UnifiedStateSync {
+  repeated TrajectorySummary entries = 1;
+}
+
+message TrajectorySummary {
+  string uuid = 1;              // 36-char conversation UUID
+  Base64Wrapper info = 2;       // Wrapper containing a base64-encoded TrajectoryPayload
+}
+
+message Base64Wrapper {
+  string base64_payload = 1;    // When decoded, yields a TrajectoryPayload binary
+}
+
+// The core metadata payload for each conversation
+message TrajectoryPayload {
+  string title = 1;
+  int32 turn_count = 2;                   // Absent for new chats (proto3 zero default)
+  Timestamp created_at = 3;
+  string conversation_uuid = 4;           // Redundant copy of parent UUID
+  int32 is_active = 5;                    // 1 = active, absent = inactive
+  Timestamp updated_at = 7;
+  WorkspaceInfo workspace = 9;
+  Timestamp accessed_at = 10;
+  TrajectoryStepBlob latest_step = 12;    // Absent for new/empty chats
+  TrajectoryStepBlob previous_step = 14;  // Absent for new/empty chats
+  TimestampWrapper step_timestamp = 15;   // Absent for new/empty chats
+  int32 step_id = 16;
+  SessionContext session = 17;            // Absent for new/empty chats
+}
+
+message Timestamp {
+  int64 seconds = 1;   // UTC seconds since Unix epoch
+  int32 nanos = 2;
+}
+
+message TimestampWrapper {
+  Timestamp wrapped_timestamp = 7;
+}
+
+message WorkspaceInfo {
+  string primary_uri = 1;
+  string secondary_uri = 2;
+  GitContext git_context = 3;
+  string branch = 4;
+}
+
+message GitContext {
+  string repo_name = 1;         // e.g. "kno-raziel/spectral-curiosity"
+  string remote_url = 2;        // e.g. "https://github.com/kno-raziel/spectral-curiosity"
+}
+
+message SessionContext {
+  SessionWorkspace workspace_snapshot = 1;
+  Timestamp session_timestamp = 2;
+  string session_uuid = 3;
+  string workspace_uri_encoded = 7;
+}
+
+message SessionWorkspace {
+  string primary_uri_plain = 1;
+  string secondary_uri_plain = 2;
+  GitContext git_context = 3;
+  string branch = 4;
+}
+
+message TrajectoryStepBlob {
+  StepWrapper step = 1;
+  int32 step_index = 2;
+}
+
+message StepWrapper {
+  int32 step_id = 1;
+  int32 step_type = 4;
+  TrajectoryStep step_content = 5;
+  AssistantResponse response_94 = 94;
+  TaskBoundaryResponse response_93 = 93;
+}
+
+message TrajectoryStep {
+  Timestamp step_timestamp = 1;
+  int32 role = 3;
+  bytes tool_call_content = 4;
+  repeated string parameter_names = 5;
+  int32 token_count = 11;
+  string tool_call_uuid = 12;
+}
+
+message ToolCall {
+  string call_id = 1;
+  string tool_name = 2;
+  string arguments_json = 3;
+  bytes response_blob = 7;
+}
+
+message AssistantResponse {
+  string response_text = 2;
+  int32 response_type = 3;
+}
+
+message TaskBoundaryResponse {
+  string mode = 1;
+  string task_status = 2;
+  string task_summary = 3;
+  string task_name = 4;
+  int32 predicted_task_size = 5;
+}

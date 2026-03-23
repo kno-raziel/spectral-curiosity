@@ -67,14 +67,31 @@ export function ConversationCard({
               <span className="text-text-muted">id:</span> {c.id.substring(0, 8)}
             </span>
             <span className="mr-3">
-              <span className="text-text-muted">date:</span> {c.date}
+              <span className="text-text-muted">date:</span> {c.createdAt || c.date}
             </span>
             <span className="mr-3">
               <span className="text-text-muted">size:</span> {c.size} MB
             </span>
+            {c.turnCount != null && c.turnCount > 0 && (
+              <span className="mr-3">
+                <span className="text-text-muted">turns:</span> {c.turnCount}
+              </span>
+            )}
             <span className="mr-3">
               <span className="text-text-muted">artifacts:</span> {c.artifacts.length}
             </span>
+            {c.gitRepo && (
+              <span className="mr-3">
+                <span className="text-text-muted">repo:</span>{" "}
+                <span className="text-accent-blue">{c.gitRepo}</span>
+                {c.gitBranch && (
+                  <span className="text-text-muted">@{c.gitBranch}</span>
+                )}
+              </span>
+            )}
+            {c.isActive && (
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 ml-1 align-middle" title="Active conversation" />
+            )}
           </div>
         </div>
 
