@@ -113,6 +113,26 @@ bun run package:ext
 
 The resulting `.vsix` will be generated in `src/extension/`.
 
+### Testing the NPM Package Locally
+
+To test the exact `bunx spectral-curiosity` experience **without publishing**, use `npm pack`:
+
+```bash
+# Create a tarball identical to what NPM receives
+npm pack
+
+# Install from tarball in a temp directory
+mkdir /tmp/test-spectral && cd /tmp/test-spectral
+npm init -y
+npm install /path/to/spectral-curiosity-X.Y.Z.tgz
+
+# Run it — this simulates `bunx spectral-curiosity`
+npx spectral-curiosity
+```
+
+> [!NOTE]
+> The server runs in two modes: **dev mode** (cloned repo, HMR enabled via Bun's HTML import) and **bunx mode** (installed via npm, serves pre-built `dist/` files). The mode is auto-detected by checking if the server runs from inside `node_modules/`.
+
 ## Scripts
 
 ```bash
