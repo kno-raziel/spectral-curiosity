@@ -1,7 +1,7 @@
 {
   "name": "spectral-curiosity",
   "private": false,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Backup, sync, and manage Antigravity conversations",
   "author": "kno-raziel",
   "license": "MIT",
