@@ -124,10 +124,7 @@ Bun.serve({
             return Response.json({ error: "File not found" }, { status: 404 });
           }
 
-          const content = await file.text();
-          return new Response(content, {
-            headers: { "Content-Type": "text/plain; charset=utf-8" },
-          });
+          return new Response(file);
         } catch (err) {
           console.error("[GET /api/artifact]", err);
           return Response.json({ error: "Failed to read artifact" }, { status: 500 });

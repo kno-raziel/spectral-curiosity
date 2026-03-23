@@ -130,7 +130,11 @@ export async function fetchSnapshotDiff(pathA: string, pathB: string): Promise<D
 // ─── Artifact Content API ───────────────────────────────────────────────────
 
 export function getArtifactUrl(cid: string, name: string): string {
-  const params = new URLSearchParams({ cid, name });
+  const params = new URLSearchParams({ 
+    cid, 
+    name, 
+    t: Date.now().toString() // Cache buster to circumvent old 404/HTML cached responses
+  });
   return `${API_BASE}/api/artifact?${params}`;
 }
 
