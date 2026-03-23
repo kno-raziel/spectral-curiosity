@@ -52,10 +52,7 @@ export function ArtifactViewer({ conversationId, artifactName, onClose }: Artifa
     <>
       {/* Backdrop */}
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: Escape handler covers keyboard */}
-      <div
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-9990"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-9990" onClick={onClose} />
 
       {/* Panel */}
       <div
@@ -97,12 +94,12 @@ export function ArtifactViewer({ conversationId, artifactName, onClose }: Artifa
               Failed to load: {error}
             </div>
           )}
-          
+
           {isImage ? (
             <div className="flex items-center justify-center min-h-[50vh]">
-              <img 
-                src={artifactUrl} 
-                alt={artifactName} 
+              <img
+                src={artifactUrl}
+                alt={artifactName}
                 className="max-w-full rounded border border-border shadow-lg"
               />
             </div>

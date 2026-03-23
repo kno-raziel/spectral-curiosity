@@ -161,7 +161,11 @@ async function readBrainData(cid: string): Promise<{ title: string; artifacts: A
       }
     }
 
-    if (!title && isMd) title = artTitle; // Fallback title for the conversation itself
+    if (isMd) {
+      if (item === "task.md" || !title) {
+        title = artTitle;
+      }
+    }
 
     let summary = "";
     const metaPath = `${fp}.metadata.json`;
