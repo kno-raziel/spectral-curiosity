@@ -127,50 +127,65 @@ async function readBrainData(cid: string): Promise<{ title: string; artifacts: A
   }
 
   for (const item of files.sort()) {
-    if (!item.endsWith(".md") || item.endsWith(".resolved")) continue;
+    const isMd = item.endsWith(".md");
+    const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(item);
+
+    if ((!isMd && !isImage) || item.endsWith(".resolved") || item.endsWith(".metadata.json"))
+      continue;
 
     const fp = join(bp, item);
-    let text: string;
+    let text = "";
+    let size = 0;
+
     try {
-      text = await readFile(fp, "utf-8");
+      const file = Bun.file(fp);
+      size = file.size;
+      if (isMd) {
+        text = await file.text();
+      }
     } catch {
       continue;
     }
 
     let artTitle = item;
-    for (const line of text.split("\n")) {
-      if (line.trim().startsWith("#")) {
-        artTitle = line
-          .trim()
-          .replace(/^#+\s*/, "")
-          .slice(0, 100);
-        break;
+    if (isMd) {
+      for (const line of text.split("\n")) {
+        if (line.trim().startsWith("#")) {
+          // Keep only the first valid heading
+          artTitle = line
+            .trim()
+            .replace(/^#+\s*/, "")
+            .slice(0, 100);
+          break;
+        }
       }
     }
 
-    if (!title) title = artTitle;
+    if (!title && isMd) title = artTitle; // Fallback title for the conversation itself
 
     let summary = "";
     const metaPath = `${fp}.metadata.json`;
     try {
-      const meta = JSON.parse(await readFile(metaPath, "utf-8"));
+      const meta = JSON.parse(await Bun.file(metaPath).text());
       summary = (meta.summary as string) || "";
     } catch {
       // no metadata
     }
 
-    const previewLines = text
-      .split("\n")
-      .filter((l) => l.trim() && !l.trim().startsWith("#") && l.trim().length > 5)
-      .slice(0, 6)
-      .map((l) => l.trim().slice(0, 150));
+    const previewLines = isMd
+      ? text
+          .split("\n")
+          .filter((l) => l.trim() && !l.trim().startsWith("#") && l.trim().length > 5)
+          .slice(0, 6)
+          .map((l) => l.trim().slice(0, 150))
+      : ["[Image Artifact]"];
 
     artifacts.push({
       name: item,
       title: artTitle.slice(0, 80),
       summary: summary.slice(0, 400),
       preview: previewLines.join("\n").slice(0, 600),
-      size: text.length,
+      size: size,
     });
   }
 
