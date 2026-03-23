@@ -68,7 +68,8 @@ export async function fetchConversations(): Promise<Conversation[]> {
   if (isVsCodeWebview) return postMessageRequest("getConversations");
   const res = await fetch(`${API_BASE}/api/conversations`);
   if (!res.ok) throw new Error("Failed to load conversations");
-  return res.json();
+  const data = (await res.json()) as { workspaces: WorkspaceEntry[]; conversations: Conversation[] };
+  return data.conversations;
 }
 
 export async function fetchWorkspaces(): Promise<WorkspaceEntry[]> {
