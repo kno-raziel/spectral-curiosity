@@ -159,9 +159,19 @@ Bun.serve({
     "/api/artifact": {
       GET: async (req: Request) => {
         const url = new URL(req.url);
-        const filePath = url.searchParams.get("path");
+
+        // Support both ?path= (direct) and ?cid=&name= (composed)
+        let filePath = url.searchParams.get("path");
+        if (!filePath) {
+          const cid = url.searchParams.get("cid");
+          const name = url.searchParams.get("name");
+          if (cid && name) {
+            filePath = join(BRAIN_DIR, cid, name);
+          }
+        }
+
         if (!filePath)
-          return Response.json({ error: "Missing ?path=" }, { status: 400 });
+          return Response.json({ error: "Missing ?path= or ?cid=&name=" }, { status: 400 });
 
         // Security: ensure path is under BRAIN_DIR or CONVERSATIONS_DIR
         const resolved = join(filePath);
