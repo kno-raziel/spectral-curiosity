@@ -19,6 +19,7 @@ import { BackupReader } from "../shared/backup-reader";
 import { diffSnapshots, listBackups } from "../shared/backups";
 import { loadConversations } from "../shared/conversations";
 import { BRAIN_DIR, CONVERSATIONS_DIR, DB_PATH } from "../shared/paths";
+import type { SavePayload } from "../shared/types";
 import { loadWorkspaces } from "../shared/workspaces";
 import { initBunAdapters } from "./adapter";
 import { handleBackupRoute } from "./routes/backup-viewer";
@@ -133,11 +134,9 @@ Bun.serve({
     "/api/save": {
       POST: async (req: Request) => {
         try {
-          const body = (await req.json()) as {
-            assignments: Record<string, string>;
-            renames: Record<string, string>;
-          };
-          const result = await saveAssignments(body.assignments, body.renames);
+          const body = (await req.json()) as SavePayload;
+          const workspaces = await loadWorkspaces();
+          const result = await saveAssignments(body, workspaces);
           return Response.json(result);
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : String(e);
@@ -194,7 +193,7 @@ Bun.serve({
     "/api/snapshots": {
       GET: async () => {
         try {
-          const snapshots = await listBackups(CONVERSATIONS_DIR);
+          const snapshots = await listBackups();
           return Response.json(snapshots);
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : String(e);
@@ -210,7 +209,7 @@ Bun.serve({
           const a = url.searchParams.get("a");
           const b = url.searchParams.get("b") ?? "current";
           if (!a) return Response.json({ error: "Missing ?a=" }, { status: 400 });
-          const result = await diffSnapshots(CONVERSATIONS_DIR, a, b);
+          const result = await diffSnapshots(a, b);
           return Response.json(result);
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : String(e);
