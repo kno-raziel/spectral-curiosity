@@ -84,13 +84,14 @@ export function ConversationCard({
               <span className="mr-3">
                 <span className="text-text-muted">repo:</span>{" "}
                 <span className="text-accent-blue">{c.gitRepo}</span>
-                {c.gitBranch && (
-                  <span className="text-text-muted">@{c.gitBranch}</span>
-                )}
+                {c.gitBranch && <span className="text-text-muted">@{c.gitBranch}</span>}
               </span>
             )}
             {c.isActive && (
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 ml-1 align-middle" title="Active conversation" />
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 ml-1 align-middle"
+                title="Active conversation"
+              />
             )}
           </div>
         </div>
