@@ -19,6 +19,7 @@ import { BackupReader } from "../shared/backup-reader";
 import { diffSnapshots, listBackups } from "../shared/backups";
 import { loadConversations } from "../shared/conversations";
 import { BRAIN_DIR, CONVERSATIONS_DIR, DB_PATH } from "../shared/paths";
+import type { SavePayload } from "../shared/types";
 import { loadWorkspaces } from "../shared/workspaces";
 import { initBunAdapters } from "./adapter";
 import { handleBackupRoute } from "./routes/backup-viewer";
@@ -133,11 +134,9 @@ Bun.serve({
     "/api/save": {
       POST: async (req: Request) => {
         try {
-          const body = (await req.json()) as {
-            assignments: Record<string, string>;
-            renames: Record<string, string>;
-          };
-          const result = await saveAssignments(body.assignments, body.renames);
+          const body = (await req.json()) as SavePayload;
+          const workspaces = await loadWorkspaces();
+          const result = await saveAssignments(body, workspaces);
           return Response.json(result);
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : String(e);
