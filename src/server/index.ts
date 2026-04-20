@@ -193,7 +193,7 @@ Bun.serve({
     "/api/snapshots": {
       GET: async () => {
         try {
-          const snapshots = await listBackups(CONVERSATIONS_DIR);
+          const snapshots = await listBackups();
           return Response.json(snapshots);
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : String(e);
@@ -209,7 +209,7 @@ Bun.serve({
           const a = url.searchParams.get("a");
           const b = url.searchParams.get("b") ?? "current";
           if (!a) return Response.json({ error: "Missing ?a=" }, { status: 400 });
-          const result = await diffSnapshots(CONVERSATIONS_DIR, a, b);
+          const result = await diffSnapshots(a, b);
           return Response.json(result);
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : String(e);
