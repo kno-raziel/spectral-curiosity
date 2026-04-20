@@ -68,7 +68,10 @@ export async function fetchConversations(): Promise<Conversation[]> {
   if (isVsCodeWebview) return postMessageRequest("getConversations");
   const res = await fetch(`${API_BASE}/api/conversations`);
   if (!res.ok) throw new Error("Failed to load conversations");
-  const data = (await res.json()) as { workspaces: WorkspaceEntry[]; conversations: Conversation[] };
+  const data = (await res.json()) as {
+    workspaces: WorkspaceEntry[];
+    conversations: Conversation[];
+  };
   return data.conversations;
 }
 
@@ -131,10 +134,10 @@ export async function fetchSnapshotDiff(pathA: string, pathB: string): Promise<D
 // ─── Artifact Content API ───────────────────────────────────────────────────
 
 export function getArtifactUrl(cid: string, name: string): string {
-  const params = new URLSearchParams({ 
-    cid, 
-    name, 
-    t: Date.now().toString() // Cache buster to circumvent old 404/HTML cached responses
+  const params = new URLSearchParams({
+    cid,
+    name,
+    t: Date.now().toString(), // Cache buster to circumvent old 404/HTML cached responses
   });
   return `${API_BASE}/api/artifact?${params}`;
 }

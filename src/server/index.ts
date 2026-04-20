@@ -183,8 +183,7 @@ Bun.serve({
         }
 
         const file = Bun.file(resolved);
-        if (!(await file.exists()))
-          return Response.json({ error: "Not found" }, { status: 404 });
+        if (!(await file.exists())) return Response.json({ error: "Not found" }, { status: 404 });
 
         return new Response(file);
       },
@@ -229,8 +228,7 @@ Bun.serve({
 
           // Validate path exists and contains backup-like files
           const entries = await readdir(body.backupDir).catch(() => null);
-          if (!entries)
-            return Response.json({ error: "Directory not found" }, { status: 404 });
+          if (!entries) return Response.json({ error: "Directory not found" }, { status: 404 });
 
           currentBackupDir = body.backupDir;
           backupReader = new BackupReader(currentBackupDir);
