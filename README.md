@@ -4,7 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.3+-black)](https://bun.sh)
 
-**Your AI conversations are your data.** Spectral is a zero-dependency tool to backup, explore, search, and manage your [Antigravity](https://antigravity.dev) AI conversation workspace associations — so you can always access your context, no matter which tool you use tomorrow.
+**Your AI conversations are your data.** I built Spectral to move away from [Antigravity](https://antigravity.google/) while keeping the AI-generated plans, documentation, and conversation context I wanted to take with me. It provides local backups, artifact browsing, search, and workspace recovery.
 
 Runs as a **Bun full-stack app** or as a **VS Code / Antigravity extension**.
 
@@ -14,12 +14,17 @@ Runs as a **Bun full-stack app** or as a **VS Code / Antigravity extension**.
 
 ## Why Spectral?
 
-If you use AI coding assistants, your conversation history is valuable context — architectural decisions, debugging sessions, domain knowledge. But that context can silently disconnect from your project, or become inaccessible if you switch tools.
+I wanted to leave Antigravity without leaving behind the work generated inside it. Implementation plans, walkthroughs, and other documentation contained decisions and context I wanted to keep using after switching tools.
 
-Spectral was born to solve two problems:
+Spectral grew out of that need for a local archive I could inspect outside the editor. It brings together:
 
-1. **Conversations disconnect from projects** — Spectral detects orphaned conversations and lets you reassign them.
-2. **Data portability** — Spectral backs up your conversations to portable formats you can read without any specific AI tool installed.
+1. **Artifacts and documentation** — The extension's backup engine saves artifact snapshots and can copy the local `brain/` directory containing generated plans, walkthroughs, and media.
+2. **Conversation portability** — Backups include structured JSON and human-readable Markdown, subject to the Language Server's limits on available conversation content.
+3. **Workspace recovery** — Spectral detects orphaned conversations and lets you reassign them to projects.
+
+### Historical context
+
+Google's [official changelog](https://antigravity.google/docs/changelog) records support for downloading artifacts from the chat UI in **v1.18.3, released February 19, 2026**, before Spectral's first preserved commit on March 16, 2026. Spectral's origin is my need to leave the editor with a usable archive of generated work and context. Individual artifact downloads were already a documented Antigravity capability by then.
 
 ---
 
