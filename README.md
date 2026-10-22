@@ -4,7 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.3+-black)](https://bun.sh)
 
-**Your AI conversations are your data.** I built Spectral to move away from [Antigravity](https://antigravity.google/) while keeping the AI-generated plans, documentation, and conversation context I wanted to take with me. It provides local backups, artifact browsing, search, and workspace recovery.
+**Your AI conversations are your data.** I built Spectral to move away from [Antigravity](https://antigravity.google/) with a bulk archive of my conversations, AI-generated plans, documentation, and locally stored images. It provides local backups, artifact browsing, search, and workspace recovery.
 
 Runs as a **Bun full-stack app** or as a **VS Code / Antigravity extension**.
 
@@ -14,17 +14,24 @@ Runs as a **Bun full-stack app** or as a **VS Code / Antigravity extension**.
 
 ## Why Spectral?
 
-I wanted to leave Antigravity without leaving behind the work generated inside it. Implementation plans, walkthroughs, and other documentation contained decisions and context I wanted to keep using after switching tools.
+I wanted to leave Antigravity with the work generated inside it. I could download individual artifacts, but I needed a bulk archive that also brought along conversations and generated images. Saving documents one at a time did not give me the archive I wanted for switching tools.
 
-Spectral grew out of that need for a local archive I could inspect outside the editor. It brings together:
+Spectral grew out of that need in March 2026. Its extension's backup engine collects the available conversation data and local artifact files into a backup directory that I can browse independently of Antigravity:
 
-1. **Artifacts and documentation** — The extension's backup engine saves artifact snapshots and can copy the local `brain/` directory containing generated plans, walkthroughs, and media.
-2. **Conversation portability** — Backups include structured JSON and human-readable Markdown, subject to the Language Server's limits on available conversation content.
-3. **Workspace recovery** — Spectral detects orphaned conversations and lets you reassign them to projects.
+| What I wanted beyond individual artifact downloads | What Spectral does |
+| --- | --- |
+| Archive conversations in bulk | Iterates over the detected conversation index and saves available trajectories as JSON, readable messages as Markdown, and per-conversation metadata. |
+| Keep generated plans and documentation together | Saves artifact snapshots and, with `includeBrain` enabled, recursively copies the local `brain/` directory. |
+| Preserve generated images alongside the documents | Copies image files present in `brain/` when that directory is included. The image files are stored separately from the conversation Markdown. |
+| Use the archive after leaving the editor | Provides a standalone backup viewer with conversation search, a file tree, and previews for supported artifact files. |
 
-### Historical context
+Workspace recovery is another part of the tool: Spectral detects orphaned conversations and lets you reassign them to projects.
 
-Google's [official changelog](https://antigravity.google/docs/changelog) records support for downloading artifacts from the chat UI in **v1.18.3, released February 19, 2026**, before Spectral's first preserved commit on March 16, 2026. Spectral's origin is my need to leave the editor with a usable archive of generated work and context. Individual artifact downloads were already a documented Antigravity capability by then.
+### Antigravity context and backup limits
+
+Google's [official changelog](https://antigravity.google/docs/changelog) records artifact downloads from the chat UI in **v1.18.3, released February 19, 2026**. Spectral was built around my March 2026 need to collect conversations, documents, and generated images into a usable bulk archive for switching tools. This describes the workflow I needed then; later Antigravity versions have added export features.
+
+Spectral can preserve only the data still available locally or returned by Antigravity's Language Server. Very large conversations can return metadata without messages; purged conversations cannot be recovered by this backup path. Images are preserved when their files exist in the included `brain/` directory, rather than embedded into the Markdown transcript. Creating these backups uses the extension's Antigravity integration; browsing an existing backup can happen in the standalone app.
 
 ---
 
